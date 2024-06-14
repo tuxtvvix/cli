@@ -64,7 +64,9 @@ type BranchConfig struct {
 	RemoteName string
 	RemoteURL  *url.URL
 	// MergeBase is the optional base branch to target in a new PR if `--base` is not specified.
-	MergeBase string
-	MergeRef  string
-	Push      string
+	MergeBase      string
+	MergeRef       string
+	PushRemoteURL  *url.URL
+	PushRemoteName string
+	Push           string
 }
