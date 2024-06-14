@@ -66,4 +66,5 @@ type BranchConfig struct {
 	// MergeBase is the optional base branch to target in a new PR if `--base` is not specified.
 	MergeBase string
 	MergeRef  string
+	Push      string
 }
