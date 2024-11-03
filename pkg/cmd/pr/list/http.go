@@ -13,7 +13,7 @@ func shouldUseSearch(filters prShared.FilterOptions) bool {
 	return filters.Draft != nil || filters.Author != "" || filters.Assignee != "" || filters.Search != "" || len(filters.Labels) > 0
 }
 
-func listPullRequests(httpClient *http.Client, repo ghrepo.Interface, filters prShared.FilterOptions, limit int) (*api.PullRequestAndTotalCount, error) {
+func ListPullRequests(httpClient *http.Client, repo ghrepo.Interface, filters prShared.FilterOptions, limit int) (*api.PullRequestAndTotalCount, error) {
 	if shouldUseSearch(filters) {
 		return searchPullRequests(httpClient, repo, filters, limit)
 	}

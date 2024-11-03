@@ -17,6 +17,15 @@ func StateTitleWithColor(cs *iostreams.ColorScheme, pr api.PullRequest) string {
 	return prStateColorFunc(text.Title(pr.State))
 }
 
+func PRNumberTitleWithColor(cs *iostreams.ColorScheme, pr api.PullRequest) string {
+	prStateColorFunc := cs.ColorFromString((ColorForPRState(pr)))
+	prNumber := fmt.Sprintf("%d", pr.Number)
+	if pr.State == "OPEN" && pr.IsDraft {
+		return prStateColorFunc(text.Title(prNumber))
+	}
+	return prStateColorFunc(text.Title(prNumber))
+}
+
 func ColorForPRState(pr api.PullRequest) string {
 	switch pr.State {
 	case "OPEN":
