@@ -18,7 +18,7 @@ func TestColorFromRGB(t *testing.T) {
 			name:  "truecolor",
 			hex:   "fc0303",
 			text:  "red",
-			wants: "\033[38;2;252;3;3mred\033[0m",
+			wants: "\033[38;2;252;3;3mred\033[39m",
 			cs:    NewColorScheme(true, true, true),
 		},
 		{
@@ -62,7 +62,7 @@ func TestHexToRGB(t *testing.T) {
 			name:  "truecolor",
 			hex:   "fc0303",
 			text:  "red",
-			wants: "\033[38;2;252;3;3mred\033[0m",
+			wants: "\033[38;2;252;3;3mred\033[39m",
 			cs:    NewColorScheme(true, true, true),
 		},
 		{

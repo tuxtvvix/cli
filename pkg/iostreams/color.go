@@ -252,5 +252,5 @@ func (c *ColorScheme) HexToRGB(hex string, x string) string {
 	r, _ := strconv.ParseInt(hex[0:2], 16, 64)
 	g, _ := strconv.ParseInt(hex[2:4], 16, 64)
 	b, _ := strconv.ParseInt(hex[4:6], 16, 64)
-	return fmt.Sprintf("\033[38;2;%d;%d;%dm%s\033[0m", r, g, b, x)
+	return fmt.Sprintf("\033[38;2;%d;%d;%dm%s\033[39m", r, g, b, x)
 }

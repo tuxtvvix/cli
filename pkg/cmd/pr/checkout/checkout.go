@@ -6,11 +6,13 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/MakeNowJust/heredoc"
 	"github.com/cli/cli/v2/api"
 	cliContext "github.com/cli/cli/v2/context"
 	"github.com/cli/cli/v2/git"
 	"github.com/cli/cli/v2/internal/gh"
 	"github.com/cli/cli/v2/internal/ghrepo"
+	"github.com/cli/cli/v2/internal/text"
 	"github.com/cli/cli/v2/pkg/cmd/pr/list"
 	"github.com/cli/cli/v2/pkg/cmd/pr/shared"
 	"github.com/cli/cli/v2/pkg/cmdutil"
@@ -52,7 +54,16 @@ func NewCmdCheckout(f *cmdutil.Factory, runF func(*CheckoutOptions) error) *cobr
 	cmd := &cobra.Command{
 		Use:   "checkout [<number> | <url> | <branch>]",
 		Short: "Check out a pull request in git",
-		Args:  cobra.MaximumNArgs(1),
+		Example: heredoc.Doc(`
+			# Interactively select a PR to checkout from the 10 most recent
+			$ gh pr checkout
+
+			# Checkout a specific PR
+			$ gh pr checkout 32
+			$ gh pr checkout https://github.com/OWNER/REPO/pull/32
+			$ gh pr checkout feature
+		`),
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Finder = shared.NewFinder(f)
 
@@ -303,7 +314,7 @@ func selectPR(httpClient *http.Client, baseRepo ghrepo.Interface, prompter share
 		"isCrossRepository",
 		"isDraft",
 		"createdAt",
-	}}, 30)
+	}}, 10)
 	if err != nil {
 		return nil, err
 	}
@@ -314,7 +325,11 @@ func selectPR(httpClient *http.Client, baseRepo ghrepo.Interface, prompter share
 func promptForPR(prompter shared.Prompter, cs *iostreams.ColorScheme, jobs api.PullRequestAndTotalCount) (*api.PullRequest, error) {
 	candidates := []string{}
 	for _, pr := range jobs.PullRequests {
-		candidates = append(candidates, fmt.Sprintf("%s %s", shared.PRNumberTitleWithColor(cs, pr), pr.Title))
+		candidates = append(candidates, text.Truncate(120, fmt.Sprintf("%s %s (%s)",
+			shared.PRNumberWithColor(cs, pr),
+			text.RemoveExcessiveWhitespace(pr.Title),
+			cs.Gray(pr.HeadLabel()),
+		)))
 	}
 
 	selected, err := prompter.Select("Check out a specific PR?", "", candidates)

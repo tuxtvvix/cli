@@ -182,9 +182,9 @@ func Test_checkoutRun(t *testing.T) {
 			},
 			promptStubs: func(pm *prompter.MockPrompter) {
 				pm.RegisterSelect("Check out a specific PR?",
-					[]string{"32 New feature", "29 Fixed bad bug", "28 Improve documentation"},
+					[]string{"#32 New feature (feature)", "#29 Fixed bad bug (bug-fix)", "#28 Improve documentation (docs)"},
 					func(_, _ string, opts []string) (int, error) {
-						return prompter.IndexFor(opts, "32 New feature")
+						return prompter.IndexFor(opts, "#32 New feature (feature)")
 					})
 			},
 			runStubs: func(cs *run.CommandStubber) {

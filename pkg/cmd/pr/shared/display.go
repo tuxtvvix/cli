@@ -17,12 +17,12 @@ func StateTitleWithColor(cs *iostreams.ColorScheme, pr api.PullRequest) string {
 	return prStateColorFunc(text.Title(pr.State))
 }
 
-func PRNumberTitleWithColor(cs *iostreams.ColorScheme, pr api.PullRequest) string {
-	prStateColorFunc := cs.ColorFromString((ColorForPRState(pr)))
-	prNumber := fmt.Sprintf("%d", pr.Number)
-	if pr.State == "OPEN" && pr.IsDraft {
-		return prStateColorFunc(text.Title(prNumber))
-	}
+// PRNumberWithColor returns a colored string representation of a pull request number
+// based on its state (open, closed, merged, or draft).
+// It prefixes the number with a hash symbol (#) to indicate it's a pull request.
+func PRNumberWithColor(cs *iostreams.ColorScheme, pr api.PullRequest) string {
+	prStateColorFunc := cs.ColorFromRGB(ColorHexCodeForPRState(pr))
+	prNumber := fmt.Sprintf("#%d", pr.Number)
 	return prStateColorFunc(text.Title(prNumber))
 }
 
@@ -37,6 +37,22 @@ func ColorForPRState(pr api.PullRequest) string {
 		return "red"
 	case "MERGED":
 		return "magenta"
+	default:
+		return ""
+	}
+}
+
+func ColorHexCodeForPRState(pr api.PullRequest) string {
+	switch pr.State {
+	case "OPEN":
+		if pr.IsDraft {
+			return "808080"
+		}
+		return "00FF00"
+	case "CLOSED":
+		return "FF0000"
+	case "MERGED":
+		return "FFA500"
 	default:
 		return ""
 	}
