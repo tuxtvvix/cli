@@ -76,40 +76,42 @@ func NewCmdCheckout(f *cmdutil.Factory, runF func(*CheckoutOptions) error) *cobr
 }
 
 func checkoutRun(opts *CheckoutOptions) error {
-	baseRepo, err := opts.BaseRepo()
-	if err != nil {
-		return err
-	}
+	var (
+		baseRepo ghrepo.Interface
+		pr       *api.PullRequest
+		err      error
+	)
 
-	var pr *api.PullRequest
-
-	if len(opts.SelectorArg) > 0 {
-
-		findOptions := shared.FindOptions{
+	switch {
+	case opts.SelectorArg != "":
+		pr, baseRepo, err = opts.Finder.Find(shared.FindOptions{
 			Selector: opts.SelectorArg,
-			Fields:   []string{"number", "headRefName", "headRepository", "headRepositoryOwner", "isCrossRepository", "maintainerCanModify"},
-		}
-		pr0, _, err := opts.Finder.Find(findOptions)
+			Fields: []string{
+				"number",
+				"headRefName", 
+				"headRepository",
+				"headRepositoryOwner",
+				"isCrossRepository",
+				"maintainerCanModify",
+			},
+		})
 		if err != nil {
 			return err
 		}
 
-		pr = pr0
-		
-	} else {
-
+	default:
 		httpClient, err := opts.HttpClient()
 		if err != nil {
 			return err
 		}
 
-		pr0, err := selectPR(httpClient, baseRepo, opts.Prompter, opts.IO.ColorScheme())
-		if err != nil {
+		if baseRepo, err = opts.BaseRepo(); err != nil {
 			return err
 		}
 
-		pr = pr0
-
+		if pr, err = selectPR(httpClient, baseRepo, opts.Prompter, opts.IO.ColorScheme()); err != nil {
+			return err
+		}
 	}
 	cfg, err := opts.Config()
 	if err != nil {
