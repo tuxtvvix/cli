@@ -22,6 +22,7 @@ type InputType int
 type Prompter interface {
 	Select(string, string, []string) (int, error)
 }
+
 const (
 	InputTypeEditor InputType = iota
 	InputTypeInline

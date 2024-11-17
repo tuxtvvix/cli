@@ -368,7 +368,7 @@ func TestPRList_withProjectItems(t *testing.T) {
 		}))
 
 	client := &http.Client{Transport: reg}
-	prsAndTotalCount, err := listPullRequests(
+	prsAndTotalCount, err := ListPullRequests(
 		client,
 		ghrepo.New("OWNER", "REPO"),
 		prShared.FilterOptions{
@@ -437,7 +437,7 @@ func TestPRList_Search_withProjectItems(t *testing.T) {
 		}))
 
 	client := &http.Client{Transport: reg}
-	prsAndTotalCount, err := listPullRequests(
+	prsAndTotalCount, err := ListPullRequests(
 		client,
 		ghrepo.New("OWNER", "REPO"),
 		prShared.FilterOptions{

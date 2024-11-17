@@ -88,7 +88,7 @@ func checkoutRun(opts *CheckoutOptions) error {
 			Selector: opts.SelectorArg,
 			Fields: []string{
 				"number",
-				"headRefName", 
+				"headRefName",
 				"headRepository",
 				"headRepositoryOwner",
 				"isCrossRepository",
