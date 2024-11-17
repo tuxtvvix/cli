@@ -1,0 +1,67 @@
+{
+    "data": {
+      "repository": {
+        "pullRequests": {
+          "totalCount": 3,
+          "nodes": [
+            {
+              "number": 32,
+              "title": "New feature",
+              "url": "https://github.com/OWNER/REPO/pull/32",
+              "createdAt": "2022-08-24T20:01:12Z",
+              "headRefName": "feature",
+              "state": "OPEN",
+              "isDraft": true,
+              "isCrossRepository": false,
+              "headRepository": {
+                "name": "REPO"
+              },
+              "headRepositoryOwner": {
+                "login": "OWNER"
+              },
+              "maintainerCanModify": true
+            },
+            {
+              "number": 29,
+              "title": "Fixed bad bug",
+              "url": "https://github.com/OWNER/REPO/pull/29",
+              "createdAt": "2022-07-20T19:01:12Z",
+              "headRefName": "bug-fix",
+              "state": "OPEN",
+              "isDraft": false,
+              "isCrossRepository": false,
+              "headRepository": {
+                "name": "REPO"
+              },
+              "headRepositoryOwner": {
+                "login": "OWNER"
+              },
+              "maintainerCanModify": true
+            },
+            {
+              "number": 28,
+              "state": "MERGED",
+              "isDraft": false,
+              "title": "Improve documentation",
+              "createdAt": "2020-01-26T19:01:12Z",
+              "url": "https://github.com/OWNER/REPO/pull/28",
+              "isCrossRepository": false,
+              "headRefName": "docs",
+              "headRepository": {
+                "name": "REPO"
+              },
+              "headRepositoryOwner": {
+                "login": "OWNER"
+              },
+              "maintainerCanModify": true
+            }
+          ],
+          "pageInfo": {
+            "hasNextPage": false,
+            "endCursor": ""
+          }
+        }
+      }
+    }
+  }
+  

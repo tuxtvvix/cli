@@ -14,6 +14,7 @@ import (
 	"github.com/cli/cli/v2/internal/config"
 	"github.com/cli/cli/v2/internal/gh"
 	"github.com/cli/cli/v2/internal/ghrepo"
+	"github.com/cli/cli/v2/internal/prompter"
 	"github.com/cli/cli/v2/internal/run"
 	"github.com/cli/cli/v2/pkg/cmd/pr/shared"
 	"github.com/cli/cli/v2/pkg/cmdutil"
@@ -63,10 +64,12 @@ func stubPR(repo, prHead string) (ghrepo.Interface, *api.PullRequest) {
 
 func Test_checkoutRun(t *testing.T) {
 	tests := []struct {
-		name       string
-		opts       *CheckoutOptions
-		httpStubs  func(*httpmock.Registry)
-		runStubs   func(*run.CommandStubber)
+		name        string
+		opts        *CheckoutOptions
+		httpStubs   func(*httpmock.Registry)
+		runStubs    func(*run.CommandStubber)
+		promptStubs func(*prompter.MockPrompter)
+
 		remotes    map[string]string
 		wantStdout string
 		wantStderr string
@@ -158,6 +161,41 @@ func Test_checkoutRun(t *testing.T) {
 				cs.Register(`git config branch\.foobar\.merge refs/heads/feature`, 0, "")
 			},
 		},
+		{
+			name: "with no selected PR args, prompts for choice",
+			opts: &CheckoutOptions{
+				SelectorArg: "",
+				Finder: func() shared.PRFinder {
+					baseRepo, pr := stubPR("OWNER/REPO:master", "OWNER/REPO:feature")
+					finder := shared.NewMockFinder("123", pr, baseRepo)
+					return finder
+				}(),
+				BaseRepo: func() (ghrepo.Interface, error) {
+					return ghrepo.New("OWNER", "REPO"), nil
+				},
+				Config: func() (gh.Config, error) {
+					return config.NewBlankConfig(), nil
+				},
+			},
+			httpStubs: func(reg *httpmock.Registry) {
+				reg.Register(httpmock.GraphQL(`query PullRequestList\b`), httpmock.FileResponse("./fixtures/prList.json"))
+			},
+			promptStubs: func(pm *prompter.MockPrompter) {
+				pm.RegisterSelect("Check out a specific PR?",
+					[]string{"32 New feature", "29 Fixed bad bug", "28 Improve documentation"},
+					func(_, _ string, opts []string) (int, error) {
+						return prompter.IndexFor(opts, "32 New feature")
+					})
+			},
+			runStubs: func(cs *run.CommandStubber) {
+				cs.Register(`git show-ref --verify -- refs/heads/feature`, 1, "")
+				cs.Register(`git fetch origin \+refs/heads/feature:refs/remotes/origin/feature`, 0, "")
+				cs.Register(`git checkout -b feature --track origin/feature`, 0, "")
+			},
+			remotes: map[string]string{
+				"origin": "OWNER/REPO",
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -178,6 +216,12 @@ func Test_checkoutRun(t *testing.T) {
 			defer cmdTeardown(t)
 			if tt.runStubs != nil {
 				tt.runStubs(cmdStubs)
+			}
+
+			pm := prompter.NewMockPrompter(t)
+			tt.opts.Prompter = pm
+			if tt.promptStubs != nil {
+				tt.promptStubs(pm)
 			}
 
 			opts.Remotes = func() (context.Remotes, error) {
