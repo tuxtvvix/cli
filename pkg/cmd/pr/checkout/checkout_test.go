@@ -218,6 +218,7 @@ func Test_checkoutRun(t *testing.T) {
 			},
 			runStubs: func(cs *run.CommandStubber) {
 				cs.Register(`git show-ref --verify -- refs/heads/feature`, 1, "")
+				cs.Register(`git remote get-url origin`, 0, "https://github.com/hubot/REPO.git")
 				cs.Register(`git fetch origin \+refs/heads/feature:refs/remotes/origin/feature`, 0, "")
 				cs.Register(`git checkout -b feature --track origin/feature`, 0, "")
 			},
