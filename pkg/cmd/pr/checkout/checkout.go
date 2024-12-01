@@ -111,6 +111,10 @@ func checkoutRun(opts *CheckoutOptions) error {
 		}
 
 	default:
+		if !opts.IO.CanPrompt() {
+			return cmdutil.FlagErrorf("must provide a pull request number (or URL or branch) when not running interactively")
+		}
+
 		httpClient, err := opts.HttpClient()
 		if err != nil {
 			return err
