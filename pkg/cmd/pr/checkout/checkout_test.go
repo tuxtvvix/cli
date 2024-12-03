@@ -66,7 +66,6 @@ func Test_checkoutRun(t *testing.T) {
 	tests := []struct {
 		name string
 		opts *CheckoutOptions
-		tty  bool
 
 		httpStubs   func(*httpmock.Registry)
 		runStubs    func(*run.CommandStubber)
@@ -196,14 +195,18 @@ func Test_checkoutRun(t *testing.T) {
 			name: "with no selected PR args and not stdin tty, return error",
 			opts: &CheckoutOptions{
 				SelectorArg: "",
+				Interactive: false,
 			},
-			tty:     false,
+			remotes: map[string]string{
+				"origin": "OWNER/REPO",
+			},
 			wantErr: true,
 		},
 		{
 			name: "with no selected PR args and stdin tty, prompts for choice",
 			opts: &CheckoutOptions{
 				SelectorArg: "",
+				Interactive: true,
 				Finder: func() shared.PRFinder {
 					baseRepo, pr := stubPR("OWNER/REPO:master", "OWNER/REPO:feature")
 					finder := shared.NewMockFinder("123", pr, baseRepo)
@@ -216,7 +219,6 @@ func Test_checkoutRun(t *testing.T) {
 					return config.NewBlankConfig(), nil
 				},
 			},
-			tty: true,
 			httpStubs: func(reg *httpmock.Registry) {
 				reg.Register(httpmock.GraphQL(`query PullRequestList\b`), httpmock.FileResponse("./fixtures/prList.json"))
 			},
@@ -243,11 +245,6 @@ func Test_checkoutRun(t *testing.T) {
 			opts := tt.opts
 
 			ios, _, stdout, stderr := iostreams.Test()
-			if tt.tty {
-				ios.SetStdinTTY(tt.tty)
-				ios.SetStdoutTTY(tt.tty)
-				ios.SetStderrTTY(tt.tty)
-			}
 
 			opts.IO = ios
 			httpReg := &httpmock.Registry{}

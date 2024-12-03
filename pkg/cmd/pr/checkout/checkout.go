@@ -31,6 +31,7 @@ type CheckoutOptions struct {
 	Finder   shared.PRFinder
 	Prompter shared.Prompter
 
+	Interactive       bool
 	BaseRepo          func() (ghrepo.Interface, error)
 	SelectorArg       string
 	RecurseSubmodules bool
@@ -69,6 +70,10 @@ func NewCmdCheckout(f *cmdutil.Factory, runF func(*CheckoutOptions) error) *cobr
 
 			if len(args) > 0 {
 				opts.SelectorArg = args[0]
+			} else if !opts.IO.CanPrompt() {
+				return cmdutil.FlagErrorf("pull request number, URL, or branch required when not running interactively")
+			} else {
+				opts.Interactive = true
 			}
 
 			if runF != nil {
@@ -111,7 +116,7 @@ func checkoutRun(opts *CheckoutOptions) error {
 		}
 
 	default:
-		if !opts.IO.CanPrompt() {
+		if !opts.Interactive {
 			return cmdutil.FlagErrorf("must provide a pull request number (or URL or branch) when not running interactively")
 		}
 
