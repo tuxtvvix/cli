@@ -55,7 +55,7 @@ func NewCmdCheckout(f *cmdutil.Factory, runF func(*CheckoutOptions) error) *cobr
 		Use:   "checkout [<number> | <url> | <branch>]",
 		Short: "Check out a pull request in git",
 		Example: heredoc.Doc(`
-			# Interactively select a PR to checkout from the 10 most recent
+			# Interactively select a PR from the 10 most recent to check out
 			$ gh pr checkout
 
 			# Checkout a specific PR
@@ -346,7 +346,7 @@ func promptForPR(prompter shared.Prompter, cs *iostreams.ColorScheme, jobs api.P
 		)))
 	}
 
-	selected, err := prompter.Select("Check out a specific PR?", "", candidates)
+	selected, err := prompter.Select("Select a pull request", "", candidates)
 	if err != nil {
 		return nil, err
 	}

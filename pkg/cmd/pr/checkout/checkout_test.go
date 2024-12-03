@@ -221,7 +221,7 @@ func Test_checkoutRun(t *testing.T) {
 				reg.Register(httpmock.GraphQL(`query PullRequestList\b`), httpmock.FileResponse("./fixtures/prList.json"))
 			},
 			promptStubs: func(pm *prompter.MockPrompter) {
-				pm.RegisterSelect("Check out a specific PR?",
+				pm.RegisterSelect("Select a pull request",
 					[]string{"#32 New feature (feature)", "#29 Fixed bad bug (bug-fix)", "#28 Improve documentation (docs)"},
 					func(_, _ string, opts []string) (int, error) {
 						return prompter.IndexFor(opts, "#32 New feature (feature)")
