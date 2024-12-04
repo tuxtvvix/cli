@@ -532,9 +532,9 @@ func TestPRCheckout_differentRepo_invalidBranchName(t *testing.T) {
 
 	_, cmdTeardown := run.Stub()
 	defer cmdTeardown(t)
-  
+
 	output, err := runCommand(http, nil, "master", `123`, baseRepo)
-  
+
 	assert.EqualError(t, err, `invalid branch name: "-foo"`)
 	assert.Equal(t, "", output.Stderr())
 	assert.Equal(t, "", output.Stderr())
