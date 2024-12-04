@@ -92,47 +92,21 @@ func NewCmdCheckout(f *cmdutil.Factory, runF func(*CheckoutOptions) error) *cobr
 }
 
 func checkoutRun(opts *CheckoutOptions) error {
-	var (
-		baseRepo ghrepo.Interface
-		pr       *api.PullRequest
-		err      error
-	)
-
-	switch {
-	case opts.SelectorArg != "":
-		pr, baseRepo, err = opts.Finder.Find(shared.FindOptions{
-			Selector: opts.SelectorArg,
-			Fields: []string{
-				"number",
-				"headRefName",
-				"headRepository",
-				"headRepositoryOwner",
-				"isCrossRepository",
-				"maintainerCanModify",
-			},
-		})
-		if err != nil {
-			return err
-		}
-
-	default:
-		if !opts.Interactive {
-			return cmdutil.FlagErrorf("must provide a pull request number (or URL or branch) when not running interactively")
-		}
-
-		httpClient, err := opts.HttpClient()
-		if err != nil {
-			return err
-		}
-
-		if baseRepo, err = opts.BaseRepo(); err != nil {
-			return err
-		}
-
-		if pr, err = selectPR(httpClient, baseRepo, opts.Prompter, opts.IO.ColorScheme()); err != nil {
-			return err
-		}
+	baseRepo, err := opts.BaseRepo()
+	if err != nil {
+		return err
 	}
+
+	client, err := opts.HttpClient()
+	if err != nil {
+		return err
+	}
+
+	pr, err := resolvePR(client, baseRepo, opts.Prompter, opts.SelectorArg, opts.Interactive, opts.Finder, opts.IO.ColorScheme())
+	if err != nil {
+		return err
+	}
+
 	cfg, err := opts.Config()
 	if err != nil {
 		return err
@@ -322,22 +296,49 @@ func executeCmds(client *git.Client, credentialPattern git.CredentialPattern, cm
 	return nil
 }
 
-func selectPR(httpClient *http.Client, baseRepo ghrepo.Interface, prompter shared.Prompter, cs *iostreams.ColorScheme) (*api.PullRequest, error) {
+func resolvePR(httpClient *http.Client, baseRepo ghrepo.Interface, prompter shared.Prompter, pullRequestSelector string, isInteractive bool, pullRequestFinder shared.PRFinder, cs *iostreams.ColorScheme) (*api.PullRequest, error) {
+	// When non-interactive
+	if pullRequestSelector != "" {
+		pr, _, err := pullRequestFinder.Find(shared.FindOptions{
+			Selector: pullRequestSelector,
+			Fields: []string{
+				"number",
+				"headRefName",
+				"headRepository",
+				"headRepositoryOwner",
+				"isCrossRepository",
+				"maintainerCanModify",
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
+		return pr, nil
+	}
+	if !isInteractive {
+		return nil, cmdutil.FlagErrorf("pull request number, URL, or branch required when not running interactively")
+	}
+	// When interactive
 	listResult, err := list.ListPullRequests(httpClient, baseRepo, shared.FilterOptions{Entity: "pr", State: "open", Fields: []string{
 		"number",
 		"title",
 		"state",
 		"url",
-		"headRefName",
-		"headRepositoryOwner",
-		"isCrossRepository",
 		"isDraft",
 		"createdAt",
+
+		"headRefName",
+		"headRepository",
+		"headRepositoryOwner",
+		"isCrossRepository",
+		"maintainerCanModify",
 	}}, 10)
 	if err != nil {
 		return nil, err
 	}
+
 	pr, err := promptForPR(prompter, cs, *listResult)
+
 	return pr, err
 }
 
