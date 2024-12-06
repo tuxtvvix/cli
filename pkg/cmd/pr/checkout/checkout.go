@@ -102,7 +102,7 @@ func checkoutRun(opts *CheckoutOptions) error {
 		return err
 	}
 
-	pr, err := resolvePR(client, baseRepo, opts.Prompter, opts.SelectorArg, opts.Interactive, opts.Finder, opts.IO.ColorScheme())
+	pr, err := resolvePR(client, baseRepo, opts.Prompter, opts.SelectorArg, opts.Interactive, opts.Finder)
 	if err != nil {
 		return err
 	}
@@ -291,7 +291,7 @@ func executeCmds(client *git.Client, credentialPattern git.CredentialPattern, cm
 	return nil
 }
 
-func resolvePR(httpClient *http.Client, baseRepo ghrepo.Interface, prompter shared.Prompter, pullRequestSelector string, isInteractive bool, pullRequestFinder shared.PRFinder, cs *iostreams.ColorScheme) (*api.PullRequest, error) {
+func resolvePR(httpClient *http.Client, baseRepo ghrepo.Interface, prompter shared.Prompter, pullRequestSelector string, isInteractive bool, pullRequestFinder shared.PRFinder) (*api.PullRequest, error) {
 	// When non-interactive
 	if pullRequestSelector != "" {
 		pr, _, err := pullRequestFinder.Find(shared.FindOptions{
@@ -332,19 +332,19 @@ func resolvePR(httpClient *http.Client, baseRepo ghrepo.Interface, prompter shar
 		return nil, err
 	}
 
-	pr, err := promptForPR(prompter, cs, *listResult)
+	pr, err := promptForPR(prompter, *listResult)
 
 	return pr, err
 }
 
-func promptForPR(prompter shared.Prompter, cs *iostreams.ColorScheme, jobs api.PullRequestAndTotalCount) (*api.PullRequest, error) {
+func promptForPR(prompter shared.Prompter, jobs api.PullRequestAndTotalCount) (*api.PullRequest, error) {
 	candidates := []string{}
 	for _, pr := range jobs.PullRequests {
-		candidates = append(candidates, text.Truncate(120, fmt.Sprintf("%s %s [%s]",
-			shared.PRNumberWithColor(cs, pr),
+		candidates = append(candidates, fmt.Sprintf("#%d %s [%s]",
+			pr.Number,
 			text.RemoveExcessiveWhitespace(pr.Title),
-			cs.Gray(pr.HeadLabel()),
-		)))
+			pr.HeadLabel(),
+		))
 	}
 
 	selected, err := prompter.Select("Select a pull request", "", candidates)
