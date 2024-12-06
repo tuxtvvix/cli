@@ -340,7 +340,7 @@ func resolvePR(httpClient *http.Client, baseRepo ghrepo.Interface, prompter shar
 func promptForPR(prompter shared.Prompter, cs *iostreams.ColorScheme, jobs api.PullRequestAndTotalCount) (*api.PullRequest, error) {
 	candidates := []string{}
 	for _, pr := range jobs.PullRequests {
-		candidates = append(candidates, text.Truncate(120, fmt.Sprintf("%s %s (%s)",
+		candidates = append(candidates, text.Truncate(120, fmt.Sprintf("%s %s [%s]",
 			shared.PRNumberWithColor(cs, pr),
 			text.RemoveExcessiveWhitespace(pr.Title),
 			cs.Gray(pr.HeadLabel()),
