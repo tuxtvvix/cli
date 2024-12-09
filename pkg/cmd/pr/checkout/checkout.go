@@ -102,7 +102,7 @@ func checkoutRun(opts *CheckoutOptions) error {
 		return err
 	}
 
-	pr, err := resolvePR(client, baseRepo, opts.Prompter, opts.SelectorArg, opts.Interactive, opts.Finder)
+	pr, err := resolvePR(client, baseRepo, opts.Prompter, opts.SelectorArg, opts.Interactive, opts.Finder, opts.IO)
 	if err != nil {
 		return err
 	}
@@ -291,7 +291,7 @@ func executeCmds(client *git.Client, credentialPattern git.CredentialPattern, cm
 	return nil
 }
 
-func resolvePR(httpClient *http.Client, baseRepo ghrepo.Interface, prompter shared.Prompter, pullRequestSelector string, isInteractive bool, pullRequestFinder shared.PRFinder) (*api.PullRequest, error) {
+func resolvePR(httpClient *http.Client, baseRepo ghrepo.Interface, prompter shared.Prompter, pullRequestSelector string, isInteractive bool, pullRequestFinder shared.PRFinder, io *iostreams.IOStreams) (*api.PullRequest, error) {
 	// When non-interactive
 	if pullRequestSelector != "" {
 		pr, _, err := pullRequestFinder.Find(shared.FindOptions{
@@ -314,6 +314,7 @@ func resolvePR(httpClient *http.Client, baseRepo ghrepo.Interface, prompter shar
 		return nil, cmdutil.FlagErrorf("pull request number, URL, or branch required when not running interactively")
 	}
 	// When interactive
+	io.StartProgressIndicator()
 	listResult, err := list.ListPullRequests(httpClient, baseRepo, shared.FilterOptions{Entity: "pr", State: "open", Fields: []string{
 		"number",
 		"title",
@@ -328,6 +329,7 @@ func resolvePR(httpClient *http.Client, baseRepo ghrepo.Interface, prompter shar
 		"isCrossRepository",
 		"maintainerCanModify",
 	}}, 10)
+	io.StopProgressIndicator()
 	if err != nil {
 		return nil, err
 	}
