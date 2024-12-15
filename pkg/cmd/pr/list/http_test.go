@@ -153,7 +153,7 @@ func Test_ListPullRequests(t *testing.T) {
 			}
 			httpClient := &http.Client{Transport: reg}
 
-			_, err := ListPullRequests(httpClient, tt.args.repo, tt.args.filters, tt.args.limit)
+			_, err := listPullRequests(httpClient, tt.args.repo, tt.args.filters, tt.args.limit)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ListPullRequests() error = %v, wantErr %v", err, tt.wantErr)
 				return
