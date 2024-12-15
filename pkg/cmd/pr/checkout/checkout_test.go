@@ -28,6 +28,10 @@ import (
 // repo: either "baseOwner/baseRepo" or "baseOwner/baseRepo:defaultBranch"
 // prHead: "headOwner/headRepo:headBranch"
 func stubPR(repo, prHead string) (ghrepo.Interface, *api.PullRequest) {
+	return _stubPR(repo, prHead, 123, "PR title", "OPEN", false)
+}
+
+func _stubPR(repo, prHead string, number int, title string, state string, isDraft bool) (ghrepo.Interface, *api.PullRequest) {
 	defaultBranch := ""
 	if idx := strings.IndexRune(repo, ':'); idx >= 0 {
 		defaultBranch = repo[idx+1:]
@@ -53,12 +57,16 @@ func stubPR(repo, prHead string) (ghrepo.Interface, *api.PullRequest) {
 	}
 
 	return baseRepo, &api.PullRequest{
-		Number:              123,
+		Number:              number,
 		HeadRefName:         headRefName,
 		HeadRepositoryOwner: api.Owner{Login: headRepo.RepoOwner()},
 		HeadRepository:      &api.PRRepository{Name: headRepo.RepoName()},
 		IsCrossRepository:   !ghrepo.IsSame(baseRepo, headRepo),
 		MaintainerCanModify: false,
+
+		Title:   title,
+		State:   state,
+		IsDraft: isDraft,
 	}
 }
 
@@ -224,10 +232,17 @@ func Test_checkoutRun(t *testing.T) {
 			opts: &CheckoutOptions{
 				SelectorArg: "",
 				Interactive: true,
-				Finder: func() shared.PRFinder {
-					baseRepo, pr := stubPR("OWNER/REPO:master", "OWNER/REPO:feature")
-					finder := shared.NewMockFinder("123", pr, baseRepo)
-					return finder
+				Lister: func() shared.PRLister {
+					_, pr1 := _stubPR("OWNER/REPO:master", "OWNER/REPO:feature", 32, "New feature", "OPEN", false)
+					_, pr2 := _stubPR("OWNER/REPO:master", "OWNER/REPO:bug-fix", 29, "Fixed bad bug", "OPEN", false)
+					_, pr3 := _stubPR("OWNER/REPO:master", "OWNER/REPO:docs", 28, "Improve documentation", "OPEN", true)
+					lister := shared.NewMockLister(&api.PullRequestAndTotalCount{
+						TotalCount: 3,
+						PullRequests: []api.PullRequest{
+							*pr1, *pr2, *pr3,
+						}, SearchCapped: false}, nil)
+					lister.ExpectFields([]string{"number", "title", "state", "isDraft", "headRefName", "headRepository", "headRepositoryOwner", "isCrossRepository", "maintainerCanModify"})
+					return lister
 				}(),
 				BaseRepo: func() (ghrepo.Interface, error) {
 					return ghrepo.New("OWNER", "REPO"), nil
@@ -236,14 +251,11 @@ func Test_checkoutRun(t *testing.T) {
 					return config.NewBlankConfig(), nil
 				},
 			},
-			httpStubs: func(reg *httpmock.Registry) {
-				reg.Register(httpmock.GraphQL(`query PullRequestList\b`), httpmock.FileResponse("./fixtures/prList.json"))
-			},
 			promptStubs: func(pm *prompter.MockPrompter) {
 				pm.RegisterSelect("Select a pull request",
-					[]string{"32\tDRAFT New feature [feature]", "29\tOPEN Fixed bad bug [bug-fix]", "28\tOPEN Improve documentation [docs]"},
+					[]string{"32\tOPEN New feature [feature]", "29\tOPEN Fixed bad bug [bug-fix]", "28\tDRAFT Improve documentation [docs]"},
 					func(_, _ string, opts []string) (int, error) {
-						return prompter.IndexFor(opts, "32\tDRAFT New feature [feature]")
+						return prompter.IndexFor(opts, "32\tOPEN New feature [feature]")
 					})
 			},
 			runStubs: func(cs *run.CommandStubber) {
@@ -263,11 +275,10 @@ func Test_checkoutRun(t *testing.T) {
 				BaseRepo: func() (ghrepo.Interface, error) {
 					return ghrepo.New("OWNER", "REPO"), nil
 				},
-			},
-			httpStubs: func(reg *httpmock.Registry) {
-				reg.Register(httpmock.GraphQL(`query PullRequestList\b`),
-					httpmock.StringResponse(`{"data":{"repository":{"pullRequests":{ "totalCount": 0,"nodes":[]}}}}`))
-
+				Lister: shared.NewMockLister(&api.PullRequestAndTotalCount{
+					TotalCount:   0,
+					PullRequests: []api.PullRequest{},
+				}, nil),
 			},
 			remotes: map[string]string{
 				"origin": "OWNER/REPO",

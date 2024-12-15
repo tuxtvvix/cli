@@ -13,7 +13,6 @@ import (
 	"github.com/cli/cli/v2/internal/gh"
 	"github.com/cli/cli/v2/internal/ghrepo"
 	"github.com/cli/cli/v2/internal/text"
-	"github.com/cli/cli/v2/pkg/cmd/pr/list"
 	"github.com/cli/cli/v2/pkg/cmd/pr/shared"
 	"github.com/cli/cli/v2/pkg/cmdutil"
 	"github.com/cli/cli/v2/pkg/iostreams"
@@ -30,6 +29,7 @@ type CheckoutOptions struct {
 
 	Finder   shared.PRFinder
 	Prompter shared.Prompter
+	Lister   shared.PRLister
 
 	Interactive       bool
 	BaseRepo          func() (ghrepo.Interface, error)
@@ -67,6 +67,7 @@ func NewCmdCheckout(f *cmdutil.Factory, runF func(*CheckoutOptions) error) *cobr
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Finder = shared.NewFinder(f)
+			opts.Lister = shared.NewLister(f)
 
 			if len(args) > 0 {
 				opts.SelectorArg = args[0]
@@ -97,12 +98,7 @@ func checkoutRun(opts *CheckoutOptions) error {
 		return err
 	}
 
-	client, err := opts.HttpClient()
-	if err != nil {
-		return err
-	}
-
-	pr, err := resolvePR(client, baseRepo, opts.Prompter, opts.SelectorArg, opts.Interactive, opts.Finder, opts.IO)
+	pr, err := resolvePR(baseRepo, opts.Prompter, opts.SelectorArg, opts.Interactive, opts.Finder, opts.Lister, opts.IO)
 	if err != nil {
 		return err
 	}
@@ -291,7 +287,7 @@ func executeCmds(client *git.Client, credentialPattern git.CredentialPattern, cm
 	return nil
 }
 
-func resolvePR(httpClient *http.Client, baseRepo ghrepo.Interface, prompter shared.Prompter, pullRequestSelector string, isInteractive bool, pullRequestFinder shared.PRFinder, io *iostreams.IOStreams) (*api.PullRequest, error) {
+func resolvePR(baseRepo ghrepo.Interface, prompter shared.Prompter, pullRequestSelector string, isInteractive bool, pullRequestFinder shared.PRFinder, prLister shared.PRLister, io *iostreams.IOStreams) (*api.PullRequest, error) {
 	// When non-interactive
 	if pullRequestSelector != "" {
 		pr, _, err := pullRequestFinder.Find(shared.FindOptions{
@@ -315,20 +311,21 @@ func resolvePR(httpClient *http.Client, baseRepo ghrepo.Interface, prompter shar
 	}
 	// When interactive
 	io.StartProgressIndicator()
-	listResult, err := list.ListPullRequests(httpClient, baseRepo, shared.FilterOptions{Entity: "pr", State: "open", Fields: []string{
-		"number",
-		"title",
-		"state",
-		"url",
-		"isDraft",
-		"createdAt",
+	listResult, err := prLister.List(shared.ListOptions{
+		State: "open",
+		Fields: []string{
+			"number",
+			"title",
+			"state",
+			"isDraft",
 
-		"headRefName",
-		"headRepository",
-		"headRepositoryOwner",
-		"isCrossRepository",
-		"maintainerCanModify",
-	}}, 10)
+			"headRefName",
+			"headRepository",
+			"headRepositoryOwner",
+			"isCrossRepository",
+			"maintainerCanModify",
+		},
+		LimitResults: 10})
 	io.StopProgressIndicator()
 	if err != nil {
 		return nil, err

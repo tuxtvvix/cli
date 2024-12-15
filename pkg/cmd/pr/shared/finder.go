@@ -548,7 +548,7 @@ func (m *mockFinder) Find(opts FindOptions) (*api.PullRequest, ghrepo.Interface,
 	if m.expectSelector != opts.Selector {
 		return nil, nil, fmt.Errorf("mockFinder: expected selector %q, got %q", m.expectSelector, opts.Selector)
 	}
-	if len(m.expectFields) > 0 && !isEqualSet(m.expectFields, opts.Fields) {
+	if len(m.expectFields) > 0 && !IsEqualSet(m.expectFields, opts.Fields) {
 		return nil, nil, fmt.Errorf("mockFinder: expected fields %v, got %v", m.expectFields, opts.Fields)
 	}
 	if m.called {
@@ -568,7 +568,7 @@ func (m *mockFinder) ExpectFields(fields []string) {
 	m.expectFields = fields
 }
 
-func isEqualSet(a, b []string) bool {
+func IsEqualSet(a, b []string) bool {
 	if len(a) != len(b) {
 		return false
 	}
