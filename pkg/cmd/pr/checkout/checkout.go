@@ -333,9 +333,11 @@ func resolvePR(httpClient *http.Client, baseRepo ghrepo.Interface, prompter shar
 	if err != nil {
 		return nil, err
 	}
+	if len(listResult.PullRequests) == 0 {
+		return nil, shared.ListNoResults(ghrepo.FullName(baseRepo), "pull request", false)
+	}
 
 	pr, err := promptForPR(prompter, *listResult)
-
 	return pr, err
 }
 

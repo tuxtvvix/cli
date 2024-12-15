@@ -75,6 +75,7 @@ func Test_checkoutRun(t *testing.T) {
 		wantStdout string
 		wantStderr string
 		wantErr    bool
+		errMsg     string
 	}{
 		{
 			name: "checkout with ssh remote URL",
@@ -204,7 +205,7 @@ func Test_checkoutRun(t *testing.T) {
 			},
 		},
 		{
-			name: "with no selected PR args and not stdin tty, return error",
+			name: "with no selected PR args and non tty, return error",
 			opts: &CheckoutOptions{
 				SelectorArg: "",
 				Interactive: false,
@@ -216,6 +217,7 @@ func Test_checkoutRun(t *testing.T) {
 				"origin": "OWNER/REPO",
 			},
 			wantErr: true,
+			errMsg:  "pull request number, URL, or branch required when not running interactively",
 		},
 		{
 			name: "with no selected PR args and stdin tty, prompts for choice",
@@ -252,6 +254,26 @@ func Test_checkoutRun(t *testing.T) {
 			remotes: map[string]string{
 				"origin": "OWNER/REPO",
 			},
+		},
+		{
+			name: "with no select PR args and no open PR, return error",
+			opts: &CheckoutOptions{
+				SelectorArg: "",
+				Interactive: true,
+				BaseRepo: func() (ghrepo.Interface, error) {
+					return ghrepo.New("OWNER", "REPO"), nil
+				},
+			},
+			httpStubs: func(reg *httpmock.Registry) {
+				reg.Register(httpmock.GraphQL(`query PullRequestList\b`),
+					httpmock.StringResponse(`{"data":{"repository":{"pullRequests":{ "totalCount": 0,"nodes":[]}}}}`))
+
+			},
+			remotes: map[string]string{
+				"origin": "OWNER/REPO",
+			},
+			wantErr: true,
+			errMsg:  "no open pull requests in OWNER/REPO",
 		},
 	}
 	for _, tt := range tests {
@@ -308,6 +330,9 @@ func Test_checkoutRun(t *testing.T) {
 			err := checkoutRun(opts)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("want error: %v, got: %v", tt.wantErr, err)
+			}
+			if err != nil {
+				assert.Equal(t, tt.errMsg, err.Error())
 			}
 			assert.Equal(t, tt.wantStdout, stdout.String())
 			assert.Equal(t, tt.wantStderr, stderr.String())
