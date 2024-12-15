@@ -344,7 +344,7 @@ func resolvePR(httpClient *http.Client, baseRepo ghrepo.Interface, prompter shar
 func promptForPR(prompter shared.Prompter, jobs api.PullRequestAndTotalCount) (*api.PullRequest, error) {
 	candidates := []string{}
 	for _, pr := range jobs.PullRequests {
-		candidates = append(candidates, fmt.Sprintf("%d\t%s\t%s [%s]",
+		candidates = append(candidates, fmt.Sprintf("%d\t%s %s [%s]",
 			pr.Number,
 			shared.PrStateWithDraft(&pr),
 			text.RemoveExcessiveWhitespace(pr.Title),

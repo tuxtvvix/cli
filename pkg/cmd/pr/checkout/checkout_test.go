@@ -241,9 +241,9 @@ func Test_checkoutRun(t *testing.T) {
 			},
 			promptStubs: func(pm *prompter.MockPrompter) {
 				pm.RegisterSelect("Select a pull request",
-					[]string{"32\tDRAFT\tNew feature [feature]", "29\tOPEN\tFixed bad bug [bug-fix]", "28\tOPEN\tImprove documentation [docs]"},
+					[]string{"32\tDRAFT New feature [feature]", "29\tOPEN Fixed bad bug [bug-fix]", "28\tOPEN Improve documentation [docs]"},
 					func(_, _ string, opts []string) (int, error) {
-						return prompter.IndexFor(opts, "32\tDRAFT\tNew feature [feature]")
+						return prompter.IndexFor(opts, "32\tDRAFT New feature [feature]")
 					})
 			},
 			runStubs: func(cs *run.CommandStubber) {
