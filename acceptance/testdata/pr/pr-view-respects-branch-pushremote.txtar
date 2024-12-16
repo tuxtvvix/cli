@@ -29,7 +29,6 @@ cd ${FORK}
 # Prepare a branch where changes are pulled from the upstream default branch but pushed to fork
 exec git checkout -b feature-branch upstream/main
 exec git config branch.feature-branch.pushRemote origin
-exec git config --list
 exec git commit --allow-empty -m 'Empty Commit'
 exec git push
 
@@ -37,6 +36,10 @@ exec git push
 exec gh api graphql -F repositoryId="${REPO_ID}" -F headRepositoryId="${FORK_ID}" -F query='mutation CreatePullRequest($headRepositoryId: ID!, $repositoryId: ID!) { createPullRequest(input:{ baseRefName: "main", body: "Feature Body", draft: false, headRefName: "feature-branch", headRepositoryId: $headRepositoryId, repositoryId: $repositoryId, title:"Feature Title" }){ pullRequest{ id url } } }'
 
 # View the PR
-env GH_DEBUG=api
 exec gh pr view
 stdout 'Feature Title'
+
+# Check the PR status
+env PR_STATUS_BRANCH=#1  Feature Title [${ORG}:feature-branch]
+exec gh pr status
+stdout $PR_STATUS_BRANCH
