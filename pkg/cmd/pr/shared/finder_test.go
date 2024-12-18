@@ -456,6 +456,7 @@ func TestFind(t *testing.T) {
 					return "blueberries", nil
 				},
 				branchConfig: func(branch string) (c git.BranchConfig) {
+					c.MergeRef = "refs/heads/main"
 					c.RemoteName = "origin"
 					c.PushRemoteName = "origin"
 					c.Push = "origin/blueberries"
@@ -465,6 +466,9 @@ func TestFind(t *testing.T) {
 					return context.Remotes{{
 						Remote: &git.Remote{Name: "origin"},
 						Repo:   ghrepo.New("OWNER", "REPO-FORK"),
+					}, {
+						Remote: &git.Remote{Name: "upstream"},
+						Repo:   ghrepo.New("OWNER", "REPO"),
 					}}, nil
 				},
 			},
