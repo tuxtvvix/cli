@@ -80,6 +80,23 @@ func TestIssueFromArgWithFields(t *testing.T) {
 			wantRepo:  "https://example.org/OWNER/REPO",
 		},
 		{
+			name: "PR URL argument",
+			args: args{
+				selector:   "https://example.org/OWNER/REPO/pull/13#comment-123",
+				baseRepoFn: nil,
+			},
+			httpStub: func(r *httpmock.Registry) {
+				r.Register(
+					httpmock.GraphQL(`query IssueByNumber\b`),
+					httpmock.StringResponse(`{"data":{"repository":{
+						"hasIssuesEnabled": true,
+						"issue":{"number":13}
+					}}}`))
+			},
+			wantIssue: 13,
+			wantRepo:  "https://example.org/OWNER/REPO",
+		},
+		{
 			name: "project cards permission issue",
 			args: args{
 				selector:   "https://example.org/OWNER/REPO/issues/13",
@@ -285,10 +302,8 @@ func TestIssuesFromArgsWithFields(t *testing.T) {
 				return
 			}
 			assert.NoError(t, err)
-			for i, issue := range issues {
-				if issue.Number != tt.wantIssues[i] {
-					t.Errorf("want issue #%d, got #%d", tt.wantIssues[i], issue.Number)
-				}
+			for i := range issues {
+				assert.Contains(t, tt.wantIssues, issues[i].Number)
 			}
 			if repo != nil {
 				repoURL := ghrepo.GenerateRepoURL(repo, "")

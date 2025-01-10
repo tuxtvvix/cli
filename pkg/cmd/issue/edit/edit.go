@@ -21,10 +21,11 @@ type EditOptions struct {
 	HttpClient func() (*http.Client, error)
 	IO         *iostreams.IOStreams
 	BaseRepo   func() (ghrepo.Interface, error)
+	Prompter   prShared.EditPrompter
 
 	DetermineEditor    func() (string, error)
-	FieldsToEditSurvey func(*prShared.Editable) error
-	EditFieldsSurvey   func(*prShared.Editable, string) error
+	FieldsToEditSurvey func(prShared.EditPrompter, *prShared.Editable) error
+	EditFieldsSurvey   func(prShared.EditPrompter, *prShared.Editable, string) error
 	FetchOptions       func(*api.Client, ghrepo.Interface, *prShared.Editable) error
 
 	SelectorArgs []string
@@ -41,25 +42,28 @@ func NewCmdEdit(f *cmdutil.Factory, runF func(*EditOptions) error) *cobra.Comman
 		FieldsToEditSurvey: prShared.FieldsToEditSurvey,
 		EditFieldsSurvey:   prShared.EditFieldsSurvey,
 		FetchOptions:       prShared.FetchOptions,
+		Prompter:           f.Prompter,
 	}
 
 	var bodyFile string
+	var removeMilestone bool
 
 	cmd := &cobra.Command{
 		Use:   "edit {<numbers> | <urls>}",
 		Short: "Edit issues",
-		Long: heredoc.Doc(`
+		Long: heredoc.Docf(`
 			Edit one or more issues within the same repository.
 
-			Editing issues' projects requires authorization with the "project" scope.
-			To authorize, run "gh auth refresh -s project".
-		`),
+			Editing issues' projects requires authorization with the %[1]sproject%[1]s scope.
+			To authorize, run %[1]sgh auth refresh -s project%[1]s.
+		`, "`"),
 		Example: heredoc.Doc(`
 			$ gh issue edit 23 --title "I found a bug" --body "Nothing works"
 			$ gh issue edit 23 --add-label "bug,help wanted" --remove-label "core"
 			$ gh issue edit 23 --add-assignee "@me" --remove-assignee monalisa,hubot
 			$ gh issue edit 23 --add-project "Roadmap" --remove-project v1,v2
 			$ gh issue edit 23 --milestone "Version 1"
+			$ gh issue edit 23 --remove-milestone
 			$ gh issue edit 23 --body-file body.txt
 			$ gh issue edit 23 34 --add-label "help wanted"
 		`),
@@ -93,6 +97,14 @@ func NewCmdEdit(f *cmdutil.Factory, runF func(*EditOptions) error) *cobra.Comman
 				}
 			}
 
+			if err := cmdutil.MutuallyExclusive(
+				"specify only one of `--milestone` or `--remove-milestone`",
+				flags.Changed("milestone"),
+				removeMilestone,
+			); err != nil {
+				return err
+			}
+
 			if flags.Changed("title") {
 				opts.Editable.Title.Edited = true
 			}
@@ -105,8 +117,13 @@ func NewCmdEdit(f *cmdutil.Factory, runF func(*EditOptions) error) *cobra.Comman
 			if flags.Changed("add-project") || flags.Changed("remove-project") {
 				opts.Editable.Projects.Edited = true
 			}
-			if flags.Changed("milestone") {
+			if flags.Changed("milestone") || removeMilestone {
 				opts.Editable.Milestone.Edited = true
+
+				// Note that when `--remove-milestone` is provided, the value of
+				// `opts.Editable.Milestone.Value` will automatically be empty,
+				// which results in milestone association removal. For reference,
+				// see the `Editable.MilestoneId` method.
 			}
 
 			if !opts.Editable.Dirty() {
@@ -136,9 +153,10 @@ func NewCmdEdit(f *cmdutil.Factory, runF func(*EditOptions) error) *cobra.Comman
 	cmd.Flags().StringSliceVar(&opts.Editable.Assignees.Remove, "remove-assignee", nil, "Remove assigned users by their `login`. Use \"@me\" to unassign yourself.")
 	cmd.Flags().StringSliceVar(&opts.Editable.Labels.Add, "add-label", nil, "Add labels by `name`")
 	cmd.Flags().StringSliceVar(&opts.Editable.Labels.Remove, "remove-label", nil, "Remove labels by `name`")
-	cmd.Flags().StringSliceVar(&opts.Editable.Projects.Add, "add-project", nil, "Add the issue to projects by `name`")
-	cmd.Flags().StringSliceVar(&opts.Editable.Projects.Remove, "remove-project", nil, "Remove the issue from projects by `name`")
+	cmd.Flags().StringSliceVar(&opts.Editable.Projects.Add, "add-project", nil, "Add the issue to projects by `title`")
+	cmd.Flags().StringSliceVar(&opts.Editable.Projects.Remove, "remove-project", nil, "Remove the issue from projects by `title`")
 	cmd.Flags().StringVarP(&opts.Editable.Milestone.Value, "milestone", "m", "", "Edit the milestone the issue belongs to by `name`")
+	cmd.Flags().BoolVar(&removeMilestone, "remove-milestone", false, "Remove the milestone association from the issue")
 
 	return cmd
 }
@@ -152,7 +170,7 @@ func editRun(opts *EditOptions) error {
 	// Prompt the user which fields they'd like to edit.
 	editable := opts.Editable
 	if opts.Interactive {
-		err = opts.FieldsToEditSurvey(&editable)
+		err = opts.FieldsToEditSurvey(opts.Prompter, &editable)
 		if err != nil {
 			return err
 		}
@@ -222,7 +240,7 @@ func editRun(opts *EditOptions) error {
 			if err != nil {
 				return err
 			}
-			err = opts.EditFieldsSurvey(&editable, editorCommand)
+			err = opts.EditFieldsSurvey(opts.Prompter, &editable, editorCommand)
 			if err != nil {
 				return err
 			}

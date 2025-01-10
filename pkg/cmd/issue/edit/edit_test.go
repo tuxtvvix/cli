@@ -105,6 +105,11 @@ func TestNewCmdEdit(t *testing.T) {
 			wantsErr: false,
 		},
 		{
+			name:     "both body and body-file flags",
+			input:    "23 --body foo --body-file bar",
+			wantsErr: true,
+		},
+		{
 			name:  "add-assignee flag",
 			input: "23 --add-assignee monalisa,hubot",
 			output: EditOptions{
@@ -207,6 +212,25 @@ func TestNewCmdEdit(t *testing.T) {
 			wantsErr: false,
 		},
 		{
+			name:  "remove-milestone flag",
+			input: "23 --remove-milestone",
+			output: EditOptions{
+				SelectorArgs: []string{"23"},
+				Editable: prShared.Editable{
+					Milestone: prShared.EditableString{
+						Value:  "",
+						Edited: true,
+					},
+				},
+			},
+			wantsErr: false,
+		},
+		{
+			name:     "both milestone and remove-milestone flags",
+			input:    "23 --milestone foo --remove-milestone",
+			wantsErr: true,
+		},
+		{
 			name:  "add label to multiple issues",
 			input: "23 34 --add-label bug",
 			output: EditOptions{
@@ -221,17 +245,8 @@ func TestNewCmdEdit(t *testing.T) {
 			wantsErr: false,
 		},
 		{
-			name:  "interactive multiple issues",
-			input: "23 34",
-			output: EditOptions{
-				SelectorArgs: []string{"23", "34"},
-				Editable: prShared.Editable{
-					Labels: prShared.EditableSlice{
-						Add:    []string{"bug"},
-						Edited: true,
-					},
-				},
-			},
+			name:     "interactive multiple issues",
+			input:    "23 34",
 			wantsErr: true,
 		},
 	}
@@ -511,7 +526,7 @@ func Test_editRun(t *testing.T) {
 			input: &EditOptions{
 				SelectorArgs: []string{"123"},
 				Interactive:  true,
-				FieldsToEditSurvey: func(eo *prShared.Editable) error {
+				FieldsToEditSurvey: func(p prShared.EditPrompter, eo *prShared.Editable) error {
 					eo.Title.Edited = true
 					eo.Body.Edited = true
 					eo.Assignees.Edited = true
@@ -520,7 +535,7 @@ func Test_editRun(t *testing.T) {
 					eo.Milestone.Edited = true
 					return nil
 				},
-				EditFieldsSurvey: func(eo *prShared.Editable, _ string) error {
+				EditFieldsSurvey: func(p prShared.EditPrompter, eo *prShared.Editable, _ string) error {
 					eo.Title.Value = "new title"
 					eo.Body.Value = "new body"
 					eo.Assignees.Value = []string{"monalisa", "hubot"}

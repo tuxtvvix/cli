@@ -6,38 +6,47 @@ CGO_LDFLAGS ?= $(filter -g -L% -l% -O%,${LDFLAGS})
 export CGO_LDFLAGS
 
 EXE =
-ifeq ($(GOOS),windows)
+ifeq ($(shell go env GOOS),windows)
 EXE = .exe
 endif
 
 ## The following tasks delegate to `script/build.go` so they can be run cross-platform.
 
 .PHONY: bin/gh$(EXE)
-bin/gh$(EXE): script/build
-	@script/build $@
+bin/gh$(EXE): script/build$(EXE)
+	@script/build$(EXE) $@
 
-script/build: script/build.go
+script/build$(EXE): script/build.go
+ifeq ($(EXE),)
 	GOOS= GOARCH= GOARM= GOFLAGS= CGO_ENABLED= go build -o $@ $<
+else
+	go build -o $@ $<
+endif
 
 .PHONY: clean
-clean: script/build
-	@script/build $@
+clean: script/build$(EXE)
+	@$< $@
 
 .PHONY: manpages
-manpages: script/build
-	@script/build $@
+manpages: script/build$(EXE)
+	@$< $@
 
 .PHONY: completions
-completions:
+completions: bin/gh$(EXE)
 	mkdir -p ./share/bash-completion/completions ./share/fish/vendor_completions.d ./share/zsh/site-functions
-	go run ./cmd/gh completion -s bash > ./share/bash-completion/completions/gh
-	go run ./cmd/gh completion -s fish > ./share/fish/vendor_completions.d/gh.fish
-	go run ./cmd/gh completion -s zsh > ./share/zsh/site-functions/_gh
+	bin/gh$(EXE) completion -s bash > ./share/bash-completion/completions/gh
+	bin/gh$(EXE) completion -s fish > ./share/fish/vendor_completions.d/gh.fish
+	bin/gh$(EXE) completion -s zsh > ./share/zsh/site-functions/_gh
 
-# just a convenience task around `go test`
+# just convenience tasks around `go test`
 .PHONY: test
 test:
 	go test ./...
+
+# For more information, see https://github.com/cli/cli/blob/trunk/acceptance/README.md
+.PHONY: acceptance
+acceptance:
+	go test -tags acceptance ./acceptance
 
 ## Site-related tasks are exclusively intended for use by the GitHub CLI team and for our release automation.
 
@@ -89,3 +98,11 @@ uninstall:
 	rm -f ${DESTDIR}${datadir}/bash-completion/completions/gh
 	rm -f ${DESTDIR}${datadir}/fish/vendor_completions.d/gh.fish
 	rm -f ${DESTDIR}${datadir}/zsh/site-functions/_gh
+
+.PHONY: macospkg
+macospkg: manpages completions
+ifndef VERSION
+	$(error VERSION is not set. Use `make macospkg VERSION=vX.Y.Z`)
+endif
+	./script/release --local "$(VERSION)" --platform macos
+	./script/pkgmacos $(VERSION)
