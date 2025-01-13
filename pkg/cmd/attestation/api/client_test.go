@@ -42,24 +42,6 @@ func NewClientWithMockGHClient(hasNextPage bool) Client {
 	}
 }
 
-//func TestGetURL(t *testing.T) {
-//	c := LiveClient{}
-//
-//	testData := []struct {
-//		repo     string
-//		digest   string
-//		expected string
-//	}{
-//		{repo: "/github/example/", digest: "sha256:12313213", expected: "repos/github/example/attestations/sha256:12313213"},
-//		{repo: "/github/example", digest: "sha256:12313213", expected: "repos/github/example/attestations/sha256:12313213"},
-//	}
-//
-//	for _, data := range testData {
-//		s := c.BuildRepoAndDigestURL(data.repo, data.digest)
-//		require.Equal(t, data.expected, s)
-//	}
-//}
-
 func TestGetByDigest(t *testing.T) {
 	c := NewClientWithMockGHClient(false)
 	attestations, err := c.GetByRepoAndDigest(testRepo, testDigest, DefaultLimit)
