@@ -67,18 +67,9 @@ func (c *LiveClient) BuildRepoAndDigestURL(repo, digest string) string {
 
 // GetByRepoAndDigest fetches the attestation by repo and digest
 func (c *LiveClient) GetByRepoAndDigest(repo, digest string, limit int) ([]*Attestation, error) {
+	c.logger.VerbosePrintf("Fetching attestations for artifact digest %s\n\n", digest)
 	url := c.BuildRepoAndDigestURL(repo, digest)
-	attestations, err := c.getAttestations(url, repo, digest, limit)
-	if err != nil {
-		return nil, err
-	}
-
-	bundles, err := c.fetchBundleFromAttestations(attestations)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch bundle with URL: %w", err)
-	}
-
-	return bundles, nil
+	return c.getByURL(url, limit)
 }
 
 func (c *LiveClient) BuildOwnerAndDigestURL(owner, digest string) string {
@@ -88,14 +79,15 @@ func (c *LiveClient) BuildOwnerAndDigestURL(owner, digest string) string {
 
 // GetByOwnerAndDigest fetches attestation by owner and digest
 func (c *LiveClient) GetByOwnerAndDigest(owner, digest string, limit int) ([]*Attestation, error) {
+	c.logger.VerbosePrintf("Fetching attestations for artifact digest %s\n\n", digest)
 	url := c.BuildOwnerAndDigestURL(owner, digest)
-	attestations, err := c.getAttestations(url, owner, digest, limit)
+	return c.getByURL(url, limit)
+}
+
+func (c *LiveClient) getByURL(url string, limit int) ([]*Attestation, error) {
+	attestations, err := c.getAttestations(url, limit)
 	if err != nil {
 		return nil, err
-	}
-
-	if len(attestations) == 0 {
-		return nil, newErrNoAttestations(owner, digest)
 	}
 
 	bundles, err := c.fetchBundleFromAttestations(attestations)
@@ -112,9 +104,7 @@ func (c *LiveClient) GetTrustDomain() (string, error) {
 	return c.getTrustDomain(MetaPath)
 }
 
-func (c *LiveClient) getAttestations(url, name, digest string, limit int) ([]*Attestation, error) {
-	c.logger.VerbosePrintf("Fetching attestations for artifact digest %s\n\n", digest)
-
+func (c *LiveClient) getAttestations(url string, limit int) ([]*Attestation, error) {
 	perPage := limit
 	if perPage <= 0 || perPage > maxLimitForFlag {
 		return nil, fmt.Errorf("limit must be greater than 0 and less than or equal to %d", maxLimitForFlag)
@@ -157,7 +147,7 @@ func (c *LiveClient) getAttestations(url, name, digest string, limit int) ([]*At
 	}
 
 	if len(attestations) == 0 {
-		return nil, newErrNoAttestations(name, digest)
+		return nil, ErrNoAttestations{}
 	}
 
 	if len(attestations) > limit {
