@@ -8,14 +8,14 @@ import (
 	"github.com/cli/cli/v2/api"
 	"github.com/cli/cli/v2/internal/ghinstance"
 	"github.com/cli/cli/v2/internal/ghrepo"
-	"github.com/cli/cli/v2/pkg/cmd/repo/autolink/domain"
+	"github.com/cli/cli/v2/pkg/cmd/repo/autolink/shared"
 )
 
 type AutolinkViewer struct {
 	HTTPClient *http.Client
 }
 
-func (a *AutolinkViewer) View(repo ghrepo.Interface, id string) (*domain.Autolink, error) {
+func (a *AutolinkViewer) View(repo ghrepo.Interface, id string) (*shared.Autolink, error) {
 	path := fmt.Sprintf("repos/%s/%s/autolinks/%s", repo.RepoOwner(), repo.RepoName(), id)
 	url := ghinstance.RESTPrefix(repo.RepoHost()) + path
 	req, err := http.NewRequest(http.MethodGet, url, nil)
@@ -35,7 +35,7 @@ func (a *AutolinkViewer) View(repo ghrepo.Interface, id string) (*domain.Autolin
 		return nil, api.HandleHTTPError(resp)
 	}
 
-	var autolink domain.Autolink
+	var autolink shared.Autolink
 	err = json.NewDecoder(resp.Body).Decode(&autolink)
 
 	if err != nil {

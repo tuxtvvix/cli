@@ -63,7 +63,7 @@ func NewCmdList(f *cmdutil.Factory, runF func(*listOptions) error) *cobra.Comman
 	}
 
 	cmd.Flags().BoolVarP(&opts.WebMode, "web", "w", false, "List autolink references in the web browser")
-	cmdutil.AddJSONFlags(cmd, &opts.Exporter, domain.AutolinkFields)
+	cmdutil.AddJSONFlags(cmd, &opts.Exporter, shared.AutolinkFields)
 
 	return cmd
 }

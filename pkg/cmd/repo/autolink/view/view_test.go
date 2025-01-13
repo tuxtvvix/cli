@@ -8,7 +8,7 @@ import (
 	"github.com/MakeNowJust/heredoc"
 	"github.com/cli/cli/v2/internal/browser"
 	"github.com/cli/cli/v2/internal/ghrepo"
-	"github.com/cli/cli/v2/pkg/cmd/repo/autolink/domain"
+	"github.com/cli/cli/v2/pkg/cmd/repo/autolink/shared"
 	"github.com/cli/cli/v2/pkg/cmdutil"
 	"github.com/cli/cli/v2/pkg/iostreams"
 	"github.com/cli/cli/v2/pkg/jsonfieldstest"
@@ -97,11 +97,11 @@ func TestNewCmdView(t *testing.T) {
 }
 
 type stubAutoLinkViewer struct {
-	autolink *domain.Autolink
+	autolink *shared.Autolink
 	err      error
 }
 
-func (g stubAutoLinkViewer) View(repo ghrepo.Interface, id string) (*domain.Autolink, error) {
+func (g stubAutoLinkViewer) View(repo ghrepo.Interface, id string) (*shared.Autolink, error) {
 	return g.autolink, g.err
 }
 
@@ -126,7 +126,7 @@ func TestViewRun(t *testing.T) {
 				ID: "1",
 			},
 			stubViewer: stubAutoLinkViewer{
-				autolink: &domain.Autolink{
+				autolink: &shared.Autolink{
 					ID:             1,
 					KeyPrefix:      "TICKET-",
 					URLTemplate:    "https://example.com/TICKET?query=<num>",
@@ -152,7 +152,7 @@ func TestViewRun(t *testing.T) {
 				}(),
 			},
 			stubViewer: stubAutoLinkViewer{
-				autolink: &domain.Autolink{
+				autolink: &shared.Autolink{
 					ID:             1,
 					KeyPrefix:      "TICKET-",
 					URLTemplate:    "https://example.com/TICKET?query=<num>",

@@ -6,7 +6,7 @@ import (
 	"github.com/MakeNowJust/heredoc"
 	"github.com/cli/cli/v2/internal/browser"
 	"github.com/cli/cli/v2/internal/ghrepo"
-	"github.com/cli/cli/v2/pkg/cmd/repo/autolink/domain"
+	"github.com/cli/cli/v2/pkg/cmd/repo/autolink/shared"
 	"github.com/cli/cli/v2/pkg/cmdutil"
 	"github.com/cli/cli/v2/pkg/iostreams"
 	"github.com/spf13/cobra"
@@ -23,7 +23,7 @@ type viewOptions struct {
 }
 
 type AutolinkViewClient interface {
-	View(repo ghrepo.Interface, id string) (*domain.Autolink, error)
+	View(repo ghrepo.Interface, id string) (*shared.Autolink, error)
 }
 
 func NewCmdView(f *cmdutil.Factory, runF func(*viewOptions) error) *cobra.Command {
@@ -65,7 +65,7 @@ func NewCmdView(f *cmdutil.Factory, runF func(*viewOptions) error) *cobra.Comman
 		},
 	}
 
-	cmdutil.AddJSONFlags(cmd, &opts.Exporter, domain.AutolinkFields)
+	cmdutil.AddJSONFlags(cmd, &opts.Exporter, shared.AutolinkFields)
 
 	return cmd
 }
