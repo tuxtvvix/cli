@@ -60,27 +60,17 @@ func NewLiveClient(hc *http.Client, host string, l *ioconfig.Handler) *LiveClien
 	}
 }
 
-func (c *LiveClient) BuildRepoAndDigestURL(repo, digest string) string {
-	repo = strings.Trim(repo, "/")
-	return fmt.Sprintf(GetAttestationByRepoAndSubjectDigestPath, repo, digest)
-}
-
 // GetByRepoAndDigest fetches the attestation by repo and digest
 func (c *LiveClient) GetByRepoAndDigest(repo, digest string, limit int) ([]*Attestation, error) {
 	c.logger.VerbosePrintf("Fetching attestations for artifact digest %s\n\n", digest)
-	url := c.BuildRepoAndDigestURL(repo, digest)
+	url := fmt.Sprintf(GetAttestationByRepoAndSubjectDigestPath, repo, digest)
 	return c.getByURL(url, limit)
-}
-
-func (c *LiveClient) BuildOwnerAndDigestURL(owner, digest string) string {
-	owner = strings.Trim(owner, "/")
-	return fmt.Sprintf(GetAttestationByOwnerAndSubjectDigestPath, owner, digest)
 }
 
 // GetByOwnerAndDigest fetches attestation by owner and digest
 func (c *LiveClient) GetByOwnerAndDigest(owner, digest string, limit int) ([]*Attestation, error) {
 	c.logger.VerbosePrintf("Fetching attestations for artifact digest %s\n\n", digest)
-	url := c.BuildOwnerAndDigestURL(owner, digest)
+	url := fmt.Sprintf(GetAttestationByOwnerAndSubjectDigestPath, owner, digest)
 	return c.getByURL(url, limit)
 }
 
