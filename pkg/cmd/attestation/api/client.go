@@ -166,7 +166,7 @@ func (c *LiveClient) fetchBundleFromAttestations(attestations []*Attestation) ([
 			}
 
 			// otherwise fetch the bundle with the provided URL
-			b, err := c.GetBundle(a.BundleURL)
+			b, err := c.getBundle(a.BundleURL)
 			if err != nil {
 				return fmt.Errorf("failed to fetch bundle with URL: %w", err)
 			}
@@ -184,7 +184,7 @@ func (c *LiveClient) fetchBundleFromAttestations(attestations []*Attestation) ([
 	return fetched, nil
 }
 
-func (c *LiveClient) GetBundle(url string) (*bundle.Bundle, error) {
+func (c *LiveClient) getBundle(url string) (*bundle.Bundle, error) {
 	c.logger.VerbosePrintf("Fetching attestation bundle with bundle URL\n\n")
 
 	var sgBundle *bundle.Bundle
