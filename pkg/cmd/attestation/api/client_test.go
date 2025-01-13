@@ -211,27 +211,22 @@ func TestFetchBundleFromAttestations_InvalidAttestation(t *testing.T) {
 	require.Nil(t, fetched, 2)
 }
 
-func TestFetchBundleFromAttestations_Fail(t *testing.T) {
-	httpClient := &failAfterNCallsHttpClient{
-		FailOnCallN:              2,
-		FailOnAllSubsequentCalls: true,
-	}
+func TestFetchBundleFromAttestations_FetchByURLFail(t *testing.T) {
+	mockHTTPClient := &failHttpClient{}
 
 	c := &LiveClient{
-		httpClient: httpClient,
+		httpClient: mockHTTPClient,
 		logger:     io.NewTestHandler(),
 	}
 
-	att1 := makeTestAttestation()
-	att2 := makeTestAttestation()
-	attestations := []*Attestation{&att1, &att2}
-	fetched, err := c.fetchBundleFromAttestations(attestations)
+	a := makeTestAttestation()
+	attestations := []*Attestation{&a}
+	bundle, err := c.fetchBundleFromAttestations(attestations)
 	require.Error(t, err)
-	require.Nil(t, fetched)
-	httpClient.AssertNumberOfCalls(t, "OnGetFailAfterNCalls", 2)
+	require.Nil(t, bundle)
 }
 
-func TestFetchBundleFromAttestations_FetchByURLFail(t *testing.T) {
+func TestFetchBundleFromAttestations_FailWithGetErr(t *testing.T) {
 	mockHTTPClient := &failHttpClient{}
 
 	c := &LiveClient{
@@ -248,7 +243,10 @@ func TestFetchBundleFromAttestations_FetchByURLFail(t *testing.T) {
 }
 
 func TestFetchBundleFromAttestations_FetchByURL5XX_Resp(t *testing.T) {
-	mockHTTPClient := &failHttpClient{}
+	mockHTTPClient := &failAfterNCallsHttpClient{
+		FailOnCallN:              1,
+		FailOnAllSubsequentCalls: true,
+	}
 
 	c := &LiveClient{
 		httpClient: mockHTTPClient,
@@ -260,10 +258,9 @@ func TestFetchBundleFromAttestations_FetchByURL5XX_Resp(t *testing.T) {
 	bundle, err := c.fetchBundleFromAttestations(attestations)
 	require.Error(t, err)
 	require.Nil(t, bundle)
-	mockHTTPClient.AssertNumberOfCalls(t, "OnGetFail", 3)
 }
 
-func TestFetchBundleByURL_FallbackToBundleField(t *testing.T) {
+func TestFetchBundleFromAttestations_FallbackToBundleField(t *testing.T) {
 	mockHTTPClient := &mockHttpClient{}
 
 	c := &LiveClient{
@@ -280,8 +277,22 @@ func TestFetchBundleByURL_FallbackToBundleField(t *testing.T) {
 }
 
 func TestGetBundle(t *testing.T) {
+	mockHTTPClient := &mockHttpClient{}
+
+	c := &LiveClient{
+		httpClient: mockHTTPClient,
+		logger:     io.NewTestHandler(),
+	}
+
+	b, err := c.GetBundle("whatever")
+	require.NoError(t, err)
+	require.Equal(t, "application/vnd.dev.sigstore.bundle.v0.3+json", b.GetMediaType())
+	mockHTTPClient.AssertNumberOfCalls(t, "OnGetSuccess", 1)
+}
+
+func TestGetBundle_Retry(t *testing.T) {
 	mockHTTPClient := &failAfterNCallsHttpClient{
-		FailOnCallN:              2,
+		FailOnCallN:              1,
 		FailOnAllSubsequentCalls: false,
 	}
 
@@ -293,7 +304,20 @@ func TestGetBundle(t *testing.T) {
 	b, err := c.GetBundle("whatever")
 	require.NoError(t, err)
 	require.Equal(t, "application/vnd.dev.sigstore.bundle.v0.3+json", b.GetMediaType())
-	mockHTTPClient.AssertNumberOfCalls(t, "OnGetFailAfterNCalls", 3)
+	mockHTTPClient.AssertNumberOfCalls(t, "OnGetFailAfterNCalls", 2)
+}
+
+func TestGetBundle_Fail(t *testing.T) {
+	mockHTTPClient := &failHttpClient{}
+	c := &LiveClient{
+		httpClient: mockHTTPClient,
+		logger:     io.NewTestHandler(),
+	}
+
+	b, err := c.GetBundle("whatever")
+	require.Error(t, err)
+	require.Nil(t, b)
+	mockHTTPClient.AssertNumberOfCalls(t, "OnGetFail", 1)
 }
 
 func TestGetTrustDomain(t *testing.T) {
