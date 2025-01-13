@@ -208,7 +208,7 @@ func (c *LiveClient) getBundle(url string) (*bundle.Bundle, error) {
 		var out []byte
 		decompressed, err := snappy.Decode(out, body)
 		if err != nil {
-			fmt.Errorf("failed to decompress with snappy: %w", err)
+			return fmt.Errorf("failed to decompress with snappy: %w", err)
 		}
 
 		var pbBundle v1.Bundle
