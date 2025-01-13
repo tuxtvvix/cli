@@ -132,12 +132,12 @@ func TestGetByDigest_NoAttestationsFound(t *testing.T) {
 
 	attestations, err := c.GetByRepoAndDigest(testRepo, testDigest, DefaultLimit)
 	require.Error(t, err)
-	require.IsType(t, ErrNoAttestations{}, err)
+	require.IsType(t, ErrNoAttestationsFound, err)
 	require.Nil(t, attestations)
 
 	attestations, err = c.GetByOwnerAndDigest(testOwner, testDigest, DefaultLimit)
 	require.Error(t, err)
-	require.IsType(t, ErrNoAttestations{}, err)
+	require.IsType(t, ErrNoAttestationsFound, err)
 	require.Nil(t, attestations)
 }
 

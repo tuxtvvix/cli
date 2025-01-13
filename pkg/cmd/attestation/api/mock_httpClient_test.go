@@ -40,19 +40,6 @@ func (m *failHttpClient) Get(url string) (*http.Response, error) {
 	}, fmt.Errorf("failed to fetch with %s", url)
 }
 
-type failHttpClient5XX struct {
-	mock.Mock
-}
-
-func (m *failHttpClient5XX) Get(url string) (*http.Response, error) {
-	m.On("OnGetFail").Return()
-	m.MethodCalled("OnGetFail")
-
-	return &http.Response{
-		StatusCode: 500,
-	}, nil
-}
-
 type failAfterNCallsHttpClient struct {
 	mock.Mock
 	FailOnCallN              int

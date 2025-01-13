@@ -137,7 +137,7 @@ func (c *LiveClient) getAttestations(url string, limit int) ([]*Attestation, err
 	}
 
 	if len(attestations) == 0 {
-		return nil, ErrNoAttestations{}
+		return nil, ErrNoAttestationsFound
 	}
 
 	if len(attestations) > limit {
