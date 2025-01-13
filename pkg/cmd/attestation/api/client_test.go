@@ -212,7 +212,10 @@ func TestFetchBundleFromAttestations_InvalidAttestation(t *testing.T) {
 }
 
 func TestFetchBundleFromAttestations_Fail(t *testing.T) {
-	httpClient := &failAfterOneCallHttpClient{}
+	httpClient := &failAfterNCallsHttpClient{
+		FailOnCallN:              2,
+		FailOnAllSubsequentCalls: true,
+	}
 
 	c := &LiveClient{
 		httpClient: httpClient,
@@ -225,7 +228,7 @@ func TestFetchBundleFromAttestations_Fail(t *testing.T) {
 	fetched, err := c.fetchBundleFromAttestations(attestations)
 	require.Error(t, err)
 	require.Nil(t, fetched)
-	httpClient.AssertNumberOfCalls(t, "OnGetFailAfterOneCall", 2)
+	httpClient.AssertNumberOfCalls(t, "OnGetFailAfterNCalls", 2)
 }
 
 func TestFetchBundleFromAttestations_FetchByURLFail(t *testing.T) {
@@ -244,6 +247,22 @@ func TestFetchBundleFromAttestations_FetchByURLFail(t *testing.T) {
 	mockHTTPClient.AssertNumberOfCalls(t, "OnGetFail", 1)
 }
 
+func TestFetchBundleFromAttestations_FetchByURL5XX_Resp(t *testing.T) {
+	mockHTTPClient := &failHttpClient{}
+
+	c := &LiveClient{
+		httpClient: mockHTTPClient,
+		logger:     io.NewTestHandler(),
+	}
+
+	a := makeTestAttestation()
+	attestations := []*Attestation{&a}
+	bundle, err := c.fetchBundleFromAttestations(attestations)
+	require.Error(t, err)
+	require.Nil(t, bundle)
+	mockHTTPClient.AssertNumberOfCalls(t, "OnGetFail", 3)
+}
+
 func TestFetchBundleByURL_FallbackToBundleField(t *testing.T) {
 	mockHTTPClient := &mockHttpClient{}
 
@@ -258,6 +277,23 @@ func TestFetchBundleByURL_FallbackToBundleField(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "application/vnd.dev.sigstore.bundle.v0.3+json", fetched[0].Bundle.GetMediaType())
 	mockHTTPClient.AssertNotCalled(t, "OnGetSuccess")
+}
+
+func TestGetBundle(t *testing.T) {
+	mockHTTPClient := &failAfterNCallsHttpClient{
+		FailOnCallN:              2,
+		FailOnAllSubsequentCalls: false,
+	}
+
+	c := &LiveClient{
+		httpClient: mockHTTPClient,
+		logger:     io.NewTestHandler(),
+	}
+
+	b, err := c.GetBundle("whatever")
+	require.NoError(t, err)
+	require.Equal(t, "application/vnd.dev.sigstore.bundle.v0.3+json", b.GetMediaType())
+	mockHTTPClient.AssertNumberOfCalls(t, "OnGetFailAfterNCalls", 3)
 }
 
 func TestGetTrustDomain(t *testing.T) {

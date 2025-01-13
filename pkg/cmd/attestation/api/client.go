@@ -176,7 +176,7 @@ func (c *LiveClient) fetchBundleFromAttestations(attestations []*Attestation) ([
 				return fmt.Errorf("attestation has no bundle or bundle URL")
 			}
 
-			// for now, we fallback to the bundle field if the bundle URL is empty
+			// for now, we fall back to the bundle field if the bundle URL is empty
 			if a.BundleURL == "" {
 				c.logger.VerbosePrintf("Bundle URL is empty. Falling back to bundle field\n\n")
 				fetched[i] = &Attestation{
@@ -207,35 +207,46 @@ func (c *LiveClient) fetchBundleFromAttestations(attestations []*Attestation) ([
 func (c *LiveClient) GetBundle(url string) (*bundle.Bundle, error) {
 	c.logger.VerbosePrintf("Fetching attestation bundle with bundle URL\n\n")
 
-	resp, err := c.httpClient.Get(url)
-	if err != nil {
-		return nil, err
-	}
+	var sgBundle *bundle.Bundle
+	bo := backoff.NewConstantBackOff(getAttestationRetryInterval)
+	err := backoff.Retry(func() error {
+		resp, err := c.httpClient.Get(url)
+		if err != nil {
+			return backoff.Permanent(err)
+		}
 
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
-	}
+		if resp.StatusCode >= 500 && resp.StatusCode <= 599 {
+			return fmt.Errorf("attestation bundle with URL %s returned status code %d", url, resp.StatusCode)
+		}
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read blob storage response body: %w", err)
-	}
+		defer resp.Body.Close()
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return fmt.Errorf("failed to read blob storage response body: %w", err)
+		}
 
-	var out []byte
-	decompressed, err := snappy.Decode(out, body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decompress with snappy: %w", err)
-	}
+		var out []byte
+		decompressed, err := snappy.Decode(out, body)
+		if err != nil {
+			fmt.Errorf("failed to decompress with snappy: %w", err)
+		}
 
-	var pbBundle v1.Bundle
-	if err = protojson.Unmarshal(decompressed, &pbBundle); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal to bundle: %w", err)
-	}
+		var pbBundle v1.Bundle
+		if err = protojson.Unmarshal(decompressed, &pbBundle); err != nil {
+			return fmt.Errorf("failed to unmarshal to bundle: %w", err)
+		}
 
-	c.logger.VerbosePrintf("Successfully fetched bundle\n\n")
+		c.logger.VerbosePrintf("Successfully fetched bundle\n\n")
 
-	return bundle.NewBundle(&pbBundle)
+		sgBundle, err = bundle.NewBundle(&pbBundle)
+		if err != nil {
+			return fmt.Errorf("failed to create new bundle: %w", err)
+		}
+
+		return nil
+	}, backoff.WithMaxRetries(bo, 3))
+
+	return sgBundle, err
 }
 
 func shouldRetry(err error) bool {

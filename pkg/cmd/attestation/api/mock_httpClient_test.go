@@ -40,21 +40,39 @@ func (m *failHttpClient) Get(url string) (*http.Response, error) {
 	}, fmt.Errorf("failed to fetch with %s", url)
 }
 
-type failAfterOneCallHttpClient struct {
+type failHttpClient5XX struct {
 	mock.Mock
 }
 
-func (m *failAfterOneCallHttpClient) Get(url string) (*http.Response, error) {
-	m.On("OnGetFailAfterOneCall").Return()
+func (m *failHttpClient5XX) Get(url string) (*http.Response, error) {
+	m.On("OnGetFail").Return()
+	m.MethodCalled("OnGetFail")
 
-	if len(m.Calls) >= 1 {
-		m.MethodCalled("OnGetFailAfterOneCall")
+	return &http.Response{
+		StatusCode: 500,
+	}, nil
+}
+
+type failAfterNCallsHttpClient struct {
+	mock.Mock
+	FailOnCallN              int
+	FailOnAllSubsequentCalls bool
+	NumCalls                 int
+}
+
+func (m *failAfterNCallsHttpClient) Get(url string) (*http.Response, error) {
+	m.On("OnGetFailAfterNCalls").Return()
+
+	m.NumCalls++
+
+	if m.NumCalls == m.FailOnCallN || (m.NumCalls > m.FailOnCallN && m.FailOnAllSubsequentCalls) {
+		m.MethodCalled("OnGetFailAfterNCalls")
 		return &http.Response{
 			StatusCode: 500,
-		}, fmt.Errorf("failed to fetch with %s", url)
+		}, nil
 	}
 
-	m.MethodCalled("OnGetFailAfterOneCall")
+	m.MethodCalled("OnGetFailAfterNCalls")
 	var compressed []byte
 	compressed = snappy.Encode(compressed, data.SigstoreBundleRaw)
 	return &http.Response{
