@@ -37,8 +37,8 @@ type finder struct {
 	branchFn     func() (string, error)
 	remotesFn    func() (remotes.Remotes, error)
 	httpClient   func() (*http.Client, error)
-	branchConfig func(string) git.BranchConfig
 	pushDefault  func() (string, error)
+	branchConfig func(string) (git.BranchConfig, error)
 	progress     progressIndicator
 
 	repo       ghrepo.Interface
@@ -62,7 +62,7 @@ func NewFinder(factory *cmdutil.Factory) PRFinder {
 			return factory.GitClient.Config(context.Background(), "push.default")
 		},
 		progress: factory.IOStreams,
-		branchConfig: func(s string) git.BranchConfig {
+		branchConfig: func(s string) (git.BranchConfig, error) {
 			return factory.GitClient.ReadBranchConfig(context.Background(), s)
 		},
 	}
@@ -242,7 +242,10 @@ func (f *finder) parseCurrentBranch() (string, int, error) {
 		return "", 0, err
 	}
 
-	branchConfig := f.branchConfig(prHeadRef)
+	branchConfig, err := f.branchConfig(prHeadRef)
+	if err != nil {
+		return "", 0, err
+	}
 
 	// the branch is configured to merge a special PR head ref
 	if m := prHeadRE.FindStringSubmatch(branchConfig.MergeRef); m != nil {

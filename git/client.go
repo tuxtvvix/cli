@@ -376,20 +376,49 @@ func (c *Client) lookupCommit(ctx context.Context, sha, format string) ([]byte, 
 	return out, nil
 }
 
-// ReadBranchConfig parses the `branch.BRANCH.(remote|merge|gh-merge-base)` part of git config.
-func (c *Client) ReadBranchConfig(ctx context.Context, branch string) (cfg BranchConfig) {
+// ReadBranchConfig parses the `branch.BRANCH.(remote|merge|pushremote|gh-merge-base)` part of git config.
+// If no branch config is found or there is an error in the command, it returns an empty BranchConfig.
+// Downstream consumers of ReadBranchConfig should consider the behavior they desire if this errors,
+// as an empty config is not necessarily breaking.
+func (c *Client) ReadBranchConfig(ctx context.Context, branch string) (BranchConfig, error) {
+
 	prefix := regexp.QuoteMeta(fmt.Sprintf("branch.%s.", branch))
 	args := []string{"config", "--get-regexp", fmt.Sprintf("^%s(remote|merge|pushremote|%s)$", prefix, MergeBaseConfig)}
 	cmd, err := c.Command(ctx, args...)
 	if err != nil {
-		return
-	}
-	out, err := cmd.Output()
-	if err != nil {
-		return
+		return BranchConfig{}, err
 	}
 
-	for _, line := range outputLines(out) {
+	// This is the error we expect if a git command does not run successfully.
+	// If the ExitCode is 1, then we just didn't find any config for the branch.
+	// We will use this error to check against the commands that are allowed to
+	// return an empty result.
+	var gitError *GitError
+	branchCfgOut, err := cmd.Output()
+	if err != nil {
+		if ok := errors.As(err, &gitError); ok && gitError.ExitCode != 1 {
+			return BranchConfig{}, err
+		}
+		return BranchConfig{}, nil
+	}
+
+	pushDefaultOut, err := c.Config(ctx, "remote.pushDefault")
+	if ok := errors.As(err, &gitError); ok && gitError.ExitCode != 1 {
+		return BranchConfig{}, err
+	}
+
+	revParseOut, err := c.revParse(ctx, "--verify", "--quiet", "--abbrev-ref", branch+"@{push}")
+	if ok := errors.As(err, &gitError); ok && gitError.ExitCode != 1 {
+		return BranchConfig{}, err
+	}
+
+	return parseBranchConfig(outputLines(branchCfgOut), strings.TrimSuffix(pushDefaultOut, "\n"), firstLine(revParseOut)), nil
+}
+
+func parseBranchConfig(configLines []string, pushDefault string, revParse string) BranchConfig {
+	var cfg BranchConfig
+
+	for _, line := range configLines {
 		parts := strings.SplitN(line, " ", 2)
 		if len(parts) < 2 {
 			continue
@@ -397,26 +426,34 @@ func (c *Client) ReadBranchConfig(ctx context.Context, branch string) (cfg Branc
 		keys := strings.Split(parts[0], ".")
 		switch keys[len(keys)-1] {
 		case "remote":
-			parseRemoteURLOrName(parts[1], &cfg.RemoteURL, &cfg.RemoteName)
+			remoteURL, remoteName := parseRemoteURLOrName(parts[1])
+			cfg.RemoteURL = remoteURL
+			cfg.RemoteName = remoteName
 		case "pushremote":
-			parseRemoteURLOrName(parts[1], &cfg.PushRemoteURL, &cfg.PushRemoteName)
+			pushRemoteURL, pushRemoteName := parseRemoteURLOrName(parts[1])
+			cfg.PushRemoteURL = pushRemoteURL
+			cfg.PushRemoteName = pushRemoteName
 		case "merge":
 			cfg.MergeRef = parts[1]
 		case MergeBaseConfig:
 			cfg.MergeBase = parts[1]
 		}
 	}
+
 	if cfg.PushRemoteURL == nil && cfg.PushRemoteName == "" {
-		if conf, err := c.Config(ctx, "remote.pushDefault"); err == nil && conf != "" {
-			parseRemoteURLOrName(conf, &cfg.PushRemoteURL, &cfg.PushRemoteName)
+		if pushDefault != "" {
+			pushRemoteURL, pushRemoteName := parseRemoteURLOrName(pushDefault)
+			cfg.PushRemoteURL = pushRemoteURL
+			cfg.PushRemoteName = pushRemoteName
 		} else {
 			cfg.PushRemoteName = cfg.RemoteName
 		}
 	}
-	if out, err = c.revParse(ctx, "--verify", "--quiet", "--abbrev-ref", branch+"@{push}"); err == nil {
-		cfg.Push = strings.TrimSuffix(string(out), "\n")
-	}
-	return
+
+	cfg.Push = revParse
+	cfg.PushDefaultName = pushDefault
+
+	return cfg
 }
 
 // SetBranchConfig sets the named value on the given branch.
@@ -777,14 +814,15 @@ func parseRemotes(remotesStr []string) RemoteSet {
 	return remotes
 }
 
-func parseRemoteURLOrName(value string, remoteURL **url.URL, remoteName *string) {
+func parseRemoteURLOrName(value string) (*url.URL, string) {
 	if strings.Contains(value, ":") {
 		if u, err := ParseURL(value); err == nil {
-			*remoteURL = u
+			return u, ""
 		}
 	} else if !isFilesystemPath(value) {
-		*remoteName = value
+		return nil, value
 	}
+	return nil, ""
 }
 
 func populateResolvedRemotes(remotes RemoteSet, resolved []string) {
