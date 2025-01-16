@@ -402,23 +402,25 @@ func (c *Client) ReadBranchConfig(ctx context.Context, branch string) (BranchCon
 		return BranchConfig{}, nil
 	}
 
-	pushDefaultOut, err := c.Config(ctx, "remote.pushDefault")
+	// Check to see if there is a pushDefault ref set for the repo
+	remotePushDefaultOut, err := c.Config(ctx, "remote.pushDefault")
 	if ok := errors.As(err, &gitError); ok && gitError.ExitCode != 1 {
 		return BranchConfig{}, err
 	}
 
-	revParseOut, err := c.revParse(ctx, "--verify", "--quiet", "--abbrev-ref", branch+"@{push}")
-	if ok := errors.As(err, &gitError); ok && gitError.ExitCode != 1 {
-		return BranchConfig{}, err
-	}
+	// Check to see if we can resolve the @{push} revision syntax. This is the easiest way to get
+	// the name of the push remote.
+	//We ignore errors resolving simple push.Default settings as these are handled downstream
+	revParseOut, _ := c.revParse(ctx, "--verify", "--quiet", "--abbrev-ref", branch+"@{push}")
 
-	return parseBranchConfig(outputLines(branchCfgOut), strings.TrimSuffix(pushDefaultOut, "\n"), firstLine(revParseOut)), nil
+	return parseBranchConfig(outputLines(branchCfgOut), strings.TrimSuffix(remotePushDefaultOut, "\n"), firstLine(revParseOut)), nil
 }
 
-func parseBranchConfig(configLines []string, pushDefault string, revParse string) BranchConfig {
+func parseBranchConfig(branchConfigLines []string, remotePushDefault string, revParse string) BranchConfig {
 	var cfg BranchConfig
 
-	for _, line := range configLines {
+	// Read the config lines for the specific branch
+	for _, line := range branchConfigLines {
 		parts := strings.SplitN(line, " ", 2)
 		if len(parts) < 2 {
 			continue
@@ -429,6 +431,7 @@ func parseBranchConfig(configLines []string, pushDefault string, revParse string
 			remoteURL, remoteName := parseRemoteURLOrName(parts[1])
 			cfg.RemoteURL = remoteURL
 			cfg.RemoteName = remoteName
+		// pushremote usually indicates a "triangular" workflow
 		case "pushremote":
 			pushRemoteURL, pushRemoteName := parseRemoteURLOrName(parts[1])
 			cfg.PushRemoteURL = pushRemoteURL
@@ -440,18 +443,27 @@ func parseBranchConfig(configLines []string, pushDefault string, revParse string
 		}
 	}
 
+	// PushRemote{URL|Name} takes precedence over remotePushDefault, so we'll only
+	// use remotePushDefault if we don't have a push remote.
 	if cfg.PushRemoteURL == nil && cfg.PushRemoteName == "" {
-		if pushDefault != "" {
-			pushRemoteURL, pushRemoteName := parseRemoteURLOrName(pushDefault)
+		// remotePushDefault usually indicates a "triangular" workflow
+		if remotePushDefault != "" {
+			pushRemoteURL, pushRemoteName := parseRemoteURLOrName(remotePushDefault)
 			cfg.PushRemoteURL = pushRemoteURL
 			cfg.PushRemoteName = pushRemoteName
 		} else {
+			// Without a PushRemote{URL|Name} or a remotePushDefault, we assume that the
+			// push remote ref is the same as the remote ref. This is likely
+			// a "centralized" workflow.
 			cfg.PushRemoteName = cfg.RemoteName
 		}
 	}
 
+	// The value returned by revParse is the easiest way to get the name of the push ref
 	cfg.Push = revParse
-	cfg.PushDefaultName = pushDefault
+
+	// Some `gh pr` workflows don't work if this is set to 'simple' or 'current'
+	cfg.RemotePushDefault = remotePushDefault
 
 	return cfg
 }

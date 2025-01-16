@@ -787,7 +787,7 @@ func TestClientReadBranchConfig(t *testing.T) {
 					Stdout: "branch.trunk.remote origin\n",
 				},
 				`path/to/git config remote.pushDefault`: {
-					Stdout: "pushdefault",
+					Stdout: "remotePushDefault",
 				},
 				`path/to/git rev-parse --verify --quiet --abbrev-ref trunk@{push}`: {
 					Stdout: "origin/trunk",
@@ -795,10 +795,10 @@ func TestClientReadBranchConfig(t *testing.T) {
 			},
 			branch: "trunk",
 			wantBranchConfig: BranchConfig{
-				RemoteName:      "origin",
-				PushRemoteName:  "pushdefault",
-				Push:            "origin/trunk",
-				PushDefaultName: "pushdefault",
+				RemoteName:        "origin",
+				PushRemoteName:    "remotePushDefault",
+				Push:              "origin/trunk",
+				RemotePushDefault: "remotePushDefault",
 			},
 			wantError: nil,
 		},
@@ -809,7 +809,7 @@ func TestClientReadBranchConfig(t *testing.T) {
 					Stdout: "branch.trunk.remote origin\n",
 				},
 				`path/to/git config remote.pushDefault`: {
-					Stdout: "pushdefault",
+					Stdout: "remotePushDefault",
 				},
 				`path/to/git rev-parse --verify --quiet --abbrev-ref trunk@{push}`: {
 					ExitStatus: 1,
@@ -817,49 +817,28 @@ func TestClientReadBranchConfig(t *testing.T) {
 			},
 			branch: "trunk",
 			wantBranchConfig: BranchConfig{
-				RemoteName:      "origin",
-				PushRemoteName:  "pushdefault",
-				PushDefaultName: "pushdefault",
+				RemoteName:        "origin",
+				PushRemoteName:    "remotePushDefault",
+				RemotePushDefault: "remotePushDefault",
 			},
 			wantError: nil,
 		},
 		{
-			name: "when git reads the config, pushDefault is set, and rev-parse fails, it should return an empty BranchConfig and the error",
-			cmds: mockedCommands{
-				`path/to/git config --get-regexp ^branch\.trunk\.(remote|merge|pushremote|gh-merge-base)$`: {
-					Stdout: "branch.trunk.remote origin\n",
-				},
-				`path/to/git config remote.pushDefault`: {
-					Stdout: "pushdefault",
-				},
-				`path/to/git rev-parse --verify --quiet --abbrev-ref trunk@{push}`: {
-					ExitStatus: 2,
-					Stderr:     "rev-parse error",
-				},
-			},
-			branch:           "trunk",
-			wantBranchConfig: BranchConfig{},
-			wantError: &GitError{
-				ExitCode: 2,
-				Stderr:   "rev-parse error",
-			},
-		},
-		{
-			name: "when git reads the config but pushdefault fails, it should return and empty BranchConfig and the error",
+			name: "when git reads the config but remotePushDefault fails, it should return and empty BranchConfig and the error",
 			cmds: mockedCommands{
 				`path/to/git config --get-regexp ^branch\.trunk\.(remote|merge|pushremote|gh-merge-base)$`: {
 					Stdout: "branch.trunk.remote origin\n",
 				},
 				`path/to/git config remote.pushDefault`: {
 					ExitStatus: 2,
-					Stderr:     "pushdefault error",
+					Stderr:     "remotePushDefault error",
 				},
 			},
 			branch:           "trunk",
 			wantBranchConfig: BranchConfig{},
 			wantError: &GitError{
 				ExitCode: 2,
-				Stderr:   "pushdefault error",
+				Stderr:   "remotePushDefault error",
 			},
 		},
 		{
@@ -963,11 +942,11 @@ func TestClientReadBranchConfig(t *testing.T) {
 			},
 			branch: "trunk",
 			wantBranchConfig: BranchConfig{
-				RemoteName:      "upstream",
-				MergeRef:        "refs/heads/main",
-				PushRemoteName:  "origin",
-				Push:            "origin/trunk",
-				PushDefaultName: "origin",
+				RemoteName:        "upstream",
+				MergeRef:          "refs/heads/main",
+				PushRemoteName:    "origin",
+				Push:              "origin/trunk",
+				RemotePushDefault: "origin",
 			},
 		},
 		{
@@ -985,10 +964,10 @@ func TestClientReadBranchConfig(t *testing.T) {
 			},
 			branch: "trunk",
 			wantBranchConfig: BranchConfig{
-				RemoteName:      "upstream",
-				MergeRef:        "refs/heads/main",
-				PushRemoteName:  "origin",
-				PushDefaultName: "current",
+				RemoteName:        "upstream",
+				MergeRef:          "refs/heads/main",
+				PushRemoteName:    "origin",
+				RemotePushDefault: "current",
 			},
 		},
 		{
@@ -1006,10 +985,10 @@ func TestClientReadBranchConfig(t *testing.T) {
 			},
 			branch: "trunk",
 			wantBranchConfig: BranchConfig{
-				RemoteName:      "upstream",
-				MergeRef:        "refs/heads/main",
-				PushRemoteName:  "origin",
-				PushDefaultName: "origin",
+				RemoteName:        "upstream",
+				MergeRef:          "refs/heads/main",
+				PushRemoteName:    "origin",
+				RemotePushDefault: "origin",
 			},
 		},
 	}
@@ -1021,15 +1000,15 @@ func TestClientReadBranchConfig(t *testing.T) {
 				commandContext: cmdCtx,
 			}
 			branchConfig, err := client.ReadBranchConfig(context.Background(), tt.branch)
-			assert.Equal(t, tt.wantBranchConfig, branchConfig)
 			if tt.wantError != nil {
 				var gitError *GitError
 				require.ErrorAs(t, err, &gitError)
 				assert.Equal(t, tt.wantError.ExitCode, gitError.ExitCode)
 				assert.Equal(t, tt.wantError.Stderr, gitError.Stderr)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
+			assert.Equal(t, tt.wantBranchConfig, branchConfig)
 		})
 	}
 }
@@ -1082,10 +1061,10 @@ func Test_parseBranchConfig(t *testing.T) {
 		{
 			name:        "push default specified",
 			configLines: []string{},
-			pushDefault: "pushdefault",
+			pushDefault: "remotePushDefault",
 			wantBranchConfig: BranchConfig{
-				PushRemoteName:  "pushdefault",
-				PushDefaultName: "pushdefault",
+				PushRemoteName:    "remotePushDefault",
+				RemotePushDefault: "remotePushDefault",
 			},
 		},
 		{
@@ -1128,15 +1107,15 @@ func Test_parseBranchConfig(t *testing.T) {
 				"branch.trunk.gh-merge-base gh-merge-base",
 				"branch.trunk.merge refs/heads/trunk",
 			},
-			pushDefault: "pushdefault",
+			pushDefault: "remotePushDefault",
 			revParse:    "origin/trunk",
 			wantBranchConfig: BranchConfig{
-				RemoteName:      "remote",
-				PushRemoteName:  "pushremote",
-				MergeBase:       "gh-merge-base",
-				MergeRef:        "refs/heads/trunk",
-				Push:            "origin/trunk",
-				PushDefaultName: "pushdefault",
+				RemoteName:        "remote",
+				PushRemoteName:    "pushremote",
+				MergeBase:         "gh-merge-base",
+				MergeRef:          "refs/heads/trunk",
+				Push:              "origin/trunk",
+				RemotePushDefault: "remotePushDefault",
 			},
 		},
 		{
@@ -1158,7 +1137,7 @@ func Test_parseBranchConfig(t *testing.T) {
 			assert.Equalf(t, tt.wantBranchConfig.MergeBase, branchConfig.MergeBase, "unexpected MergeBase")
 			assert.Equalf(t, tt.wantBranchConfig.PushRemoteName, branchConfig.PushRemoteName, "unexpected PushRemoteName")
 			assert.Equalf(t, tt.wantBranchConfig.Push, branchConfig.Push, "unexpected Push")
-			assert.Equalf(t, tt.wantBranchConfig.PushDefaultName, branchConfig.PushDefaultName, "unexpected PushDefaultName")
+			assert.Equalf(t, tt.wantBranchConfig.RemotePushDefault, branchConfig.RemotePushDefault, "unexpected RemotePushDefault")
 			if tt.wantBranchConfig.RemoteURL != nil {
 				assert.Equalf(t, tt.wantBranchConfig.RemoteURL.String(), branchConfig.RemoteURL.String(), "unexpected RemoteURL")
 			}

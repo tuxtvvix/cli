@@ -226,8 +226,9 @@ func prSelectorForCurrentBranch(branchConfig git.BranchConfig, baseRepo ghrepo.I
 	if branchOwner != "" {
 		selector := prHeadRef
 		if branchConfig.Push != "" {
+			// If we have a resolved push revision ref, we defer to that
 			selector = strings.TrimPrefix(branchConfig.Push, branchConfig.PushRemoteName+"/")
-		} else if (branchConfig.PushDefaultName == "upstream" || branchConfig.PushDefaultName == "tracking") &&
+		} else if (branchConfig.RemotePushDefault == "upstream" || branchConfig.RemotePushDefault == "tracking") &&
 			strings.HasPrefix(branchConfig.MergeRef, "refs/heads/") {
 			selector = strings.TrimPrefix(branchConfig.MergeRef, "refs/heads/")
 		}
