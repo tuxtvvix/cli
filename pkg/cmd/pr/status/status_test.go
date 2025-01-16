@@ -494,7 +494,7 @@ func Test_prSelectorForCurrentBranch(t *testing.T) {
 		{
 			name: "Branch merges from a remote specified by URL",
 			branchConfig: git.BranchConfig{
-				RemoteURL: &url.URL{
+				PushRemoteURL: &url.URL{
 					Scheme: "ssh",
 					User:   url.User("git"),
 					Host:   "github.com",
@@ -537,7 +537,7 @@ func Test_prSelectorForCurrentBranch(t *testing.T) {
 		{
 			name: "Branch is a fork and merges from a remote specified by URL",
 			branchConfig: git.BranchConfig{
-				RemoteURL: &url.URL{
+				PushRemoteURL: &url.URL{
 					Scheme: "ssh",
 					User:   url.User("git"),
 					Host:   "github.com",
@@ -625,7 +625,7 @@ func Test_prSelectorForCurrentBranch(t *testing.T) {
 		{
 			name: "Remote URL errors",
 			branchConfig: git.BranchConfig{
-				RemoteURL: &url.URL{
+				PushRemoteURL: &url.URL{
 					Scheme: "ssh",
 					User:   url.User("git"),
 					Host:   "github.com",
@@ -660,7 +660,7 @@ func Test_prSelectorForCurrentBranch(t *testing.T) {
 		{
 			name: "Current branch pushes to default upstream",
 			branchConfig: git.BranchConfig{
-				RemoteURL: &url.URL{
+				PushRemoteURL: &url.URL{
 					Scheme: "ssh",
 					User:   url.User("git"),
 					Host:   "github.com",
@@ -684,7 +684,7 @@ func Test_prSelectorForCurrentBranch(t *testing.T) {
 		{
 			name: "Current branch pushes to default tracking",
 			branchConfig: git.BranchConfig{
-				RemoteURL: &url.URL{
+				PushRemoteURL: &url.URL{
 					Scheme: "ssh",
 					User:   url.User("git"),
 					Host:   "github.com",

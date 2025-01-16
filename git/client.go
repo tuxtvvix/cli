@@ -456,6 +456,7 @@ func parseBranchConfig(branchConfigLines []string, remotePushDefault string, rev
 			// push remote ref is the same as the remote ref. This is likely
 			// a "centralized" workflow.
 			cfg.PushRemoteName = cfg.RemoteName
+			cfg.PushRemoteURL = cfg.RemoteURL
 		}
 	}
 

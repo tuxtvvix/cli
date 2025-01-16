@@ -199,11 +199,10 @@ func prSelectorForCurrentBranch(branchConfig git.BranchConfig, baseRepo ghrepo.I
 		}
 		return prNumber, prHeadRef, nil
 	}
-
 	var branchOwner string
-	if branchConfig.RemoteURL != nil {
+	if branchConfig.PushRemoteURL != nil {
 		// the branch merges from a remote specified by URL
-		r, err := ghrepo.FromURL(branchConfig.RemoteURL)
+		r, err := ghrepo.FromURL(branchConfig.PushRemoteURL)
 		if err != nil {
 			// TODO: We aren't returning the error because we discovered that it was shadowed
 			// before refactoring to its current return pattern. Thus, we aren't confident
