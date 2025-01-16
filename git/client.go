@@ -410,7 +410,7 @@ func (c *Client) ReadBranchConfig(ctx context.Context, branch string) (BranchCon
 
 	// Check to see if we can resolve the @{push} revision syntax. This is the easiest way to get
 	// the name of the push remote.
-	//We ignore errors resolving simple push.Default settings as these are handled downstream
+	// We ignore errors resolving simple push.Default settings as these are handled downstream
 	revParseOut, _ := c.revParse(ctx, "--verify", "--quiet", "--abbrev-ref", branch+"@{push}")
 
 	return parseBranchConfig(outputLines(branchCfgOut), strings.TrimSuffix(remotePushDefaultOut, "\n"), firstLine(revParseOut)), nil
