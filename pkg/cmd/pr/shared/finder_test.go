@@ -631,7 +631,7 @@ func TestFind(t *testing.T) {
 	}
 }
 
-func Test_parsePRRefs(t *testing.T) {
+func TestParsePRRefs(t *testing.T) {
 	originOwnerUrl, err := url.Parse("https://github.com/ORIGINOWNER/REPO.git")
 	if err != nil {
 		t.Fatal(err)
@@ -891,7 +891,7 @@ func Test_parsePRRefs(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			prRefs, err := parsePRRefs(tt.currentBranchName, tt.branchConfig, tt.parsedPushRevision, tt.pushDefault, tt.remotePushDefault, tt.baseRefRepo, tt.rems)
+			prRefs, err := ParsePRRefs(tt.currentBranchName, tt.branchConfig, tt.parsedPushRevision, tt.pushDefault, tt.remotePushDefault, tt.baseRefRepo, tt.rems)
 			if tt.wantErr != nil {
 				require.Equal(t, tt.wantErr, err)
 			} else {

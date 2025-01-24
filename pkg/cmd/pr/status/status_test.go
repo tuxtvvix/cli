@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"io"
 	"net/http"
-	"net/url"
 	"regexp"
 	"strings"
 	"testing"
@@ -96,12 +95,13 @@ func TestPRStatus(t *testing.T) {
 	defer http.Verify(t)
 	http.Register(httpmock.GraphQL(`query PullRequestStatus\b`), httpmock.FileResponse("./fixtures/prStatus.json"))
 
-	// stub successful git command
+	// stub successful git commands
 	rs, cleanup := run.Stub()
 	defer cleanup(t)
 	rs.Register(`git config --get-regexp \^branch\\.`, 0, "")
 	rs.Register(`git config remote.pushDefault`, 0, "")
-	rs.Register(`git rev-parse --verify --quiet --abbrev-ref blueberries@{push}`, 0, "")
+	rs.Register(`git rev-parse --abbrev-ref blueberries@{push}`, 0, "")
+	rs.Register(`git config push.default`, 0, "")
 
 	output, err := runCommand(http, "blueberries", true, "")
 	if err != nil {
@@ -133,7 +133,8 @@ func TestPRStatus_reviewsAndChecks(t *testing.T) {
 	defer cleanup(t)
 	rs.Register(`git config --get-regexp \^branch\\.`, 0, "")
 	rs.Register(`git config remote.pushDefault`, 0, "")
-	rs.Register(`git rev-parse --verify --quiet --abbrev-ref blueberries@{push}`, 0, "")
+	rs.Register(`git rev-parse --abbrev-ref blueberries@{push}`, 0, "")
+	rs.Register(`git config push.default`, 0, "")
 
 	output, err := runCommand(http, "blueberries", true, "")
 	if err != nil {
@@ -165,7 +166,8 @@ func TestPRStatus_reviewsAndChecksWithStatesByCount(t *testing.T) {
 	defer cleanup(t)
 	rs.Register(`git config --get-regexp \^branch\\.`, 0, "")
 	rs.Register(`git config remote.pushDefault`, 0, "")
-	rs.Register(`git rev-parse --verify --quiet --abbrev-ref blueberries@{push}`, 0, "")
+	rs.Register(`git rev-parse --abbrev-ref blueberries@{push}`, 0, "")
+	rs.Register(`git config push.default`, 0, "")
 
 	output, err := runCommandWithDetector(http, "blueberries", true, "", &fd.EnabledDetectorMock{})
 	if err != nil {
@@ -196,7 +198,8 @@ func TestPRStatus_currentBranch_showTheMostRecentPR(t *testing.T) {
 	defer cleanup(t)
 	rs.Register(`git config --get-regexp \^branch\\.`, 0, "")
 	rs.Register(`git config remote.pushDefault`, 0, "")
-	rs.Register(`git rev-parse --verify --quiet --abbrev-ref blueberries@{push}`, 0, "")
+	rs.Register(`git rev-parse --abbrev-ref blueberries@{push}`, 0, "")
+	rs.Register(`git config push.default`, 0, "")
 
 	output, err := runCommand(http, "blueberries", true, "")
 	if err != nil {
@@ -231,7 +234,8 @@ func TestPRStatus_currentBranch_defaultBranch(t *testing.T) {
 	defer cleanup(t)
 	rs.Register(`git config --get-regexp \^branch\\.`, 0, "")
 	rs.Register(`git config remote.pushDefault`, 0, "")
-	rs.Register(`git rev-parse --verify --quiet --abbrev-ref blueberries@{push}`, 0, "")
+	rs.Register(`git rev-parse --abbrev-ref blueberries@{push}`, 0, "")
+	rs.Register(`git config push.default`, 0, "")
 
 	output, err := runCommand(http, "blueberries", true, "")
 	if err != nil {
@@ -272,7 +276,8 @@ func TestPRStatus_currentBranch_Closed(t *testing.T) {
 	defer cleanup(t)
 	rs.Register(`git config --get-regexp \^branch\\.`, 0, "")
 	rs.Register(`git config remote.pushDefault`, 0, "")
-	rs.Register(`git rev-parse --verify --quiet --abbrev-ref blueberries@{push}`, 0, "")
+	rs.Register(`git rev-parse --abbrev-ref blueberries@{push}`, 0, "")
+	rs.Register(`git config push.default`, 0, "")
 
 	output, err := runCommand(http, "blueberries", true, "")
 	if err != nil {
@@ -296,7 +301,8 @@ func TestPRStatus_currentBranch_Closed_defaultBranch(t *testing.T) {
 	defer cleanup(t)
 	rs.Register(`git config --get-regexp \^branch\\.`, 0, "")
 	rs.Register(`git config remote.pushDefault`, 0, "")
-	rs.Register(`git rev-parse --verify --quiet --abbrev-ref blueberries@{push}`, 0, "")
+	rs.Register(`git rev-parse --abbrev-ref blueberries@{push}`, 0, "")
+	rs.Register(`git config push.default`, 0, "")
 
 	output, err := runCommand(http, "blueberries", true, "")
 	if err != nil {
@@ -320,7 +326,8 @@ func TestPRStatus_currentBranch_Merged(t *testing.T) {
 	defer cleanup(t)
 	rs.Register(`git config --get-regexp \^branch\\.`, 0, "")
 	rs.Register(`git config remote.pushDefault`, 0, "")
-	rs.Register(`git rev-parse --verify --quiet --abbrev-ref blueberries@{push}`, 0, "")
+	rs.Register(`git rev-parse --abbrev-ref blueberries@{push}`, 0, "")
+	rs.Register(`git config push.default`, 0, "")
 
 	output, err := runCommand(http, "blueberries", true, "")
 	if err != nil {
@@ -344,7 +351,8 @@ func TestPRStatus_currentBranch_Merged_defaultBranch(t *testing.T) {
 	defer cleanup(t)
 	rs.Register(`git config --get-regexp \^branch\\.`, 0, "")
 	rs.Register(`git config remote.pushDefault`, 0, "")
-	rs.Register(`git rev-parse --verify --quiet --abbrev-ref blueberries@{push}`, 0, "")
+	rs.Register(`git rev-parse --abbrev-ref blueberries@{push}`, 0, "")
+	rs.Register(`git config push.default`, 0, "")
 
 	output, err := runCommand(http, "blueberries", true, "")
 	if err != nil {
@@ -368,7 +376,8 @@ func TestPRStatus_blankSlate(t *testing.T) {
 	defer cleanup(t)
 	rs.Register(`git config --get-regexp \^branch\\.`, 0, "")
 	rs.Register(`git config remote.pushDefault`, 0, "")
-	rs.Register(`git rev-parse --verify --quiet --abbrev-ref blueberries@{push}`, 0, "")
+	rs.Register(`git rev-parse --abbrev-ref blueberries@{push}`, 0, "")
+	rs.Register(`git config push.default`, 0, "")
 
 	output, err := runCommand(http, "blueberries", true, "")
 	if err != nil {
@@ -428,7 +437,8 @@ func TestPRStatus_detachedHead(t *testing.T) {
 	defer cleanup(t)
 	rs.Register(`git config --get-regexp \^branch\\.`, 0, "")
 	rs.Register(`git config remote.pushDefault`, 0, "")
-	rs.Register(`git rev-parse --verify --quiet --abbrev-ref @{push}`, 0, "")
+	rs.Register(`git rev-parse --abbrev-ref @{push}`, 0, "")
+	rs.Register(`git config push.default`, 0, "")
 
 	output, err := runCommand(http, "", true, "")
 	if err != nil {
@@ -460,260 +470,4 @@ func TestPRStatus_error_ReadBranchConfig(t *testing.T) {
 	rs.Register(`git config --get-regexp \^branch\\.`, 2, "")
 	_, err := runCommand(initFakeHTTP(), "blueberries", true, "")
 	assert.Error(t, err)
-}
-
-func Test_prSelectorForCurrentBranch(t *testing.T) {
-	tests := []struct {
-		name         string
-		branchConfig git.BranchConfig
-		baseRepo     ghrepo.Interface
-		prHeadRef    string
-		remotes      context.Remotes
-		wantPrNumber int
-		wantSelector string
-		wantError    error
-	}{
-		{
-			name:         "Empty branch config",
-			branchConfig: git.BranchConfig{},
-			prHeadRef:    "monalisa/main",
-			wantPrNumber: 0,
-			wantSelector: "monalisa/main",
-			wantError:    nil,
-		},
-		{
-			name: "The branch is configured to merge a special PR head ref",
-			branchConfig: git.BranchConfig{
-				MergeRef: "refs/pull/42/head",
-			},
-			prHeadRef:    "monalisa/main",
-			wantPrNumber: 42,
-			wantSelector: "monalisa/main",
-			wantError:    nil,
-		},
-		{
-			name: "Branch merges from a remote specified by URL",
-			branchConfig: git.BranchConfig{
-				PushRemoteURL: &url.URL{
-					Scheme: "ssh",
-					User:   url.User("git"),
-					Host:   "github.com",
-					Path:   "monalisa/playground.git",
-				},
-			},
-			baseRepo:  ghrepo.NewWithHost("monalisa", "playground", "github.com"),
-			prHeadRef: "monalisa/main",
-			remotes: context.Remotes{
-				&context.Remote{
-					Remote: &git.Remote{Name: "origin"},
-					Repo:   ghrepo.NewWithHost("monalisa", "playground", "github.com"),
-				},
-			},
-			wantPrNumber: 0,
-			wantSelector: "monalisa/main",
-			wantError:    nil,
-		},
-		{
-			name: "Branch merges from a remote specified by name",
-			branchConfig: git.BranchConfig{
-				RemoteName: "upstream",
-			},
-			baseRepo:  ghrepo.NewWithHost("monalisa", "playground", "github.com"),
-			prHeadRef: "monalisa/main",
-			remotes: context.Remotes{
-				&context.Remote{
-					Remote: &git.Remote{Name: "origin"},
-					Repo:   ghrepo.NewWithHost("forkName", "playground", "github.com"),
-				},
-				&context.Remote{
-					Remote: &git.Remote{Name: "upstream"},
-					Repo:   ghrepo.NewWithHost("monalisa", "playground", "github.com"),
-				},
-			},
-			wantPrNumber: 0,
-			wantSelector: "monalisa/main",
-			wantError:    nil,
-		},
-		{
-			name: "Branch is a fork and merges from a remote specified by URL",
-			branchConfig: git.BranchConfig{
-				PushRemoteURL: &url.URL{
-					Scheme: "ssh",
-					User:   url.User("git"),
-					Host:   "github.com",
-					Path:   "forkName/playground.git",
-				},
-				MergeRef: "refs/heads/main",
-			},
-			baseRepo:  ghrepo.NewWithHost("monalisa", "playground", "github.com"),
-			prHeadRef: "monalisa/main",
-			remotes: context.Remotes{
-				&context.Remote{
-					Remote: &git.Remote{Name: "origin"},
-					Repo:   ghrepo.NewWithHost("forkName", "playground", "github.com"),
-				},
-			},
-			wantPrNumber: 0,
-			wantSelector: "forkName:main",
-			wantError:    nil,
-		},
-		{
-			name: "Branch is a fork and merges from a remote specified by name",
-			branchConfig: git.BranchConfig{
-				RemoteName: "origin",
-			},
-			baseRepo:  ghrepo.NewWithHost("monalisa", "playground", "github.com"),
-			prHeadRef: "monalisa/main",
-			remotes: context.Remotes{
-				&context.Remote{
-					Remote: &git.Remote{Name: "origin"},
-					Repo:   ghrepo.NewWithHost("forkName", "playground", "github.com"),
-				},
-				&context.Remote{
-					Remote: &git.Remote{Name: "upstream"},
-					Repo:   ghrepo.NewWithHost("monalisa", "playground", "github.com"),
-				},
-			},
-			wantPrNumber: 0,
-			wantSelector: "forkName:monalisa/main",
-			wantError:    nil,
-		},
-		{
-			name: "Branch specifies a mergeRef and merges from a remote specified by name",
-			branchConfig: git.BranchConfig{
-				RemoteName: "upstream",
-				MergeRef:   "refs/heads/main",
-			},
-			baseRepo:  ghrepo.NewWithHost("monalisa", "playground", "github.com"),
-			prHeadRef: "monalisa/main",
-			remotes: context.Remotes{
-				&context.Remote{
-					Remote: &git.Remote{Name: "origin"},
-					Repo:   ghrepo.NewWithHost("forkName", "playground", "github.com"),
-				},
-				&context.Remote{
-					Remote: &git.Remote{Name: "upstream"},
-					Repo:   ghrepo.NewWithHost("monalisa", "playground", "github.com"),
-				},
-			},
-			wantPrNumber: 0,
-			wantSelector: "main",
-			wantError:    nil,
-		},
-		{
-			name: "Branch is a fork, specifies a mergeRef, and merges from a remote specified by name",
-			branchConfig: git.BranchConfig{
-				RemoteName: "origin",
-				MergeRef:   "refs/heads/main",
-			},
-			baseRepo:  ghrepo.NewWithHost("monalisa", "playground", "github.com"),
-			prHeadRef: "monalisa/main",
-			remotes: context.Remotes{
-				&context.Remote{
-					Remote: &git.Remote{Name: "origin"},
-					Repo:   ghrepo.NewWithHost("forkName", "playground", "github.com"),
-				},
-				&context.Remote{
-					Remote: &git.Remote{Name: "upstream"},
-					Repo:   ghrepo.NewWithHost("monalisa", "playground", "github.com"),
-				},
-			},
-			wantPrNumber: 0,
-			wantSelector: "forkName:main",
-			wantError:    nil,
-		},
-		{
-			name: "Remote URL errors",
-			branchConfig: git.BranchConfig{
-				PushRemoteURL: &url.URL{
-					Scheme: "ssh",
-					User:   url.User("git"),
-					Host:   "github.com",
-					Path:   "/\\invalid?Path/",
-				},
-			},
-			prHeadRef:    "monalisa/main",
-			wantPrNumber: 0,
-			wantSelector: "monalisa/main",
-			wantError:    nil,
-		},
-		{
-			name: "Remote Name errors",
-			branchConfig: git.BranchConfig{
-				RemoteName: "nonexistentRemote",
-			},
-			prHeadRef: "monalisa/main",
-			remotes: context.Remotes{
-				&context.Remote{
-					Remote: &git.Remote{Name: "origin"},
-					Repo:   ghrepo.NewWithHost("forkName", "playground", "github.com"),
-				},
-				&context.Remote{
-					Remote: &git.Remote{Name: "upstream"},
-					Repo:   ghrepo.NewWithHost("monalisa", "playground", "github.com"),
-				},
-			},
-			wantPrNumber: 0,
-			wantSelector: "monalisa/main",
-			wantError:    nil,
-		},
-		{
-			name: "Current branch pushes to default upstream",
-			branchConfig: git.BranchConfig{
-				PushRemoteURL: &url.URL{
-					Scheme: "ssh",
-					User:   url.User("git"),
-					Host:   "github.com",
-					Path:   "Frederick888/playground.git",
-				},
-				MergeRef:          "refs/heads/main",
-				RemotePushDefault: "upstream",
-			},
-			baseRepo:  ghrepo.NewWithHost("octocat", "playground", "github.com"),
-			prHeadRef: "Frederick888/main",
-			remotes: context.Remotes{
-				&context.Remote{
-					Remote: &git.Remote{Name: "origin"},
-					Repo:   ghrepo.NewWithHost("octocat", "playground", "github.com"),
-				},
-			},
-			wantPrNumber: 0,
-			wantSelector: "Frederick888:main",
-			wantError:    nil,
-		},
-		{
-			name: "Current branch pushes to default tracking",
-			branchConfig: git.BranchConfig{
-				PushRemoteURL: &url.URL{
-					Scheme: "ssh",
-					User:   url.User("git"),
-					Host:   "github.com",
-					Path:   "Frederick888/playground.git",
-				},
-				MergeRef:          "refs/heads/main",
-				RemotePushDefault: "tracking",
-			},
-			baseRepo:  ghrepo.NewWithHost("octocat", "playground", "github.com"),
-			prHeadRef: "Frederick888/main",
-			remotes: context.Remotes{
-				&context.Remote{
-					Remote: &git.Remote{Name: "origin"},
-					Repo:   ghrepo.NewWithHost("octocat", "playground", "github.com"),
-				},
-			},
-			wantPrNumber: 0,
-			wantSelector: "Frederick888:main",
-			wantError:    nil,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-
-			prNum, headRef, err := prSelectorForCurrentBranch(tt.branchConfig, tt.baseRepo, tt.prHeadRef, tt.remotes)
-			assert.Equal(t, tt.wantPrNumber, prNum)
-			assert.Equal(t, tt.wantSelector, headRef)
-			assert.Equal(t, tt.wantError, err)
-		})
-	}
 }
