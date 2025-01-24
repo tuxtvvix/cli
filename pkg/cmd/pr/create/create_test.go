@@ -353,8 +353,6 @@ func Test_createRun(t *testing.T) {
 				return func() {}
 			},
 			cmdStubs: func(cs *run.CommandStubber) {
-				cs.Register(`git config remote.pushDefault`, 1, "")
-				cs.Register(`git rev-parse --verify --quiet --abbrev-ref feature@\{push\}`, 1, "")
 				cs.Register(`git( .+)? log( .+)? origin/master\.\.\.feature`, 0, "")
 			},
 			expectedBrowse: "https://github.com/OWNER/REPO/compare/master...feature?body=&expand=1",
@@ -384,10 +382,6 @@ func Test_createRun(t *testing.T) {
 				opts.HeadBranch = "feature"
 				return func() {}
 			},
-			cmdStubs: func(cs *run.CommandStubber) {
-				cs.Register(`git config remote.pushDefault`, 1, "")
-				cs.Register(`git rev-parse --verify --quiet --abbrev-ref feature@\{push\}`, 1, "")
-			},
 			expectedOut: "https://github.com/OWNER/REPO/pull/12\n",
 		},
 		{
@@ -401,10 +395,6 @@ func Test_createRun(t *testing.T) {
 				opts.HeadBranch = "feature"
 				opts.DryRun = true
 				return func() {}
-			},
-			cmdStubs: func(cs *run.CommandStubber) {
-				cs.Register(`git config remote.pushDefault`, 1, "")
-				cs.Register(`git rev-parse --verify --quiet --abbrev-ref feature@\{push\}`, 1, "")
 			},
 			expectedOutputs: []string{
 				"Would have created a Pull Request with:",
@@ -436,10 +426,6 @@ func Test_createRun(t *testing.T) {
 				opts.Milestone = "big one.oh"
 				opts.DryRun = true
 				return func() {}
-			},
-			cmdStubs: func(cs *run.CommandStubber) {
-				cs.Register(`git config remote.pushDefault`, 1, "")
-				cs.Register(`git rev-parse --verify --quiet --abbrev-ref feature@\{push\}`, 1, "")
 			},
 			httpStubs: func(reg *httpmock.Registry, t *testing.T) {
 				reg.Register(
@@ -501,10 +487,6 @@ func Test_createRun(t *testing.T) {
 				opts.DryRun = true
 				return func() {}
 			},
-			cmdStubs: func(cs *run.CommandStubber) {
-				cs.Register(`git config remote.pushDefault`, 1, "")
-				cs.Register(`git rev-parse --verify --quiet --abbrev-ref feature@\{push\}`, 1, "")
-			},
 			expectedOutputs: []string{
 				`Would have created a Pull Request with:`,
 				`Title: my title`,
@@ -541,10 +523,6 @@ func Test_createRun(t *testing.T) {
 				opts.Milestone = "big one.oh"
 				opts.DryRun = true
 				return func() {}
-			},
-			cmdStubs: func(cs *run.CommandStubber) {
-				cs.Register(`git config remote.pushDefault`, 1, "")
-				cs.Register(`git rev-parse --verify --quiet --abbrev-ref feature@\{push\}`, 1, "")
 			},
 			httpStubs: func(reg *httpmock.Registry, t *testing.T) {
 				reg.Register(
@@ -612,10 +590,6 @@ func Test_createRun(t *testing.T) {
 				opts.DryRun = true
 				return func() {}
 			},
-			cmdStubs: func(cs *run.CommandStubber) {
-				cs.Register(`git config remote.pushDefault`, 1, "")
-				cs.Register(`git rev-parse --verify --quiet --abbrev-ref feature@\{push\}`, 1, "")
-			},
 			expectedOut: heredoc.Doc(`
 				Would have created a Pull Request with:
 				Title: TITLE
@@ -662,8 +636,6 @@ func Test_createRun(t *testing.T) {
 					}))
 			},
 			cmdStubs: func(cs *run.CommandStubber) {
-				cs.Register(`git config remote.pushDefault`, 1, "")
-				cs.Register(`git rev-parse --verify --quiet --abbrev-ref feature@\{push\}`, 1, "")
 				cs.Register(`git show-ref --verify -- HEAD refs/remotes/origin/feature`, 0, "")
 				cs.Register(`git push --set-upstream origin HEAD:refs/heads/feature`, 0, "")
 			},
@@ -727,8 +699,6 @@ func Test_createRun(t *testing.T) {
 					}))
 			},
 			cmdStubs: func(cs *run.CommandStubber) {
-				cs.Register(`git config remote.pushDefault`, 1, "")
-				cs.Register(`git rev-parse --verify --quiet --abbrev-ref feature@\{push\}`, 1, "")
 				cs.Register(`git show-ref --verify -- HEAD refs/remotes/origin/feature`, 0, "")
 				cs.Register(`git push --set-upstream origin HEAD:refs/heads/feature`, 0, "")
 			},
@@ -775,8 +745,6 @@ func Test_createRun(t *testing.T) {
 					}))
 			},
 			cmdStubs: func(cs *run.CommandStubber) {
-				cs.Register(`git config remote.pushDefault`, 1, "")
-				cs.Register(`git rev-parse --verify --quiet --abbrev-ref feature@\{push\}`, 1, "")
 				cs.Register(`git show-ref --verify -- HEAD refs/remotes/origin/feature`, 0, "")
 				cs.Register(`git push --set-upstream origin HEAD:refs/heads/feature`, 0, "")
 			},
@@ -826,8 +794,6 @@ func Test_createRun(t *testing.T) {
 					}))
 			},
 			cmdStubs: func(cs *run.CommandStubber) {
-				cs.Register(`git config remote.pushDefault`, 1, "")
-				cs.Register(`git rev-parse --verify --quiet --abbrev-ref feature@\{push\}`, 1, "")
 				cs.Register(`git show-ref --verify -- HEAD refs/remotes/origin/feature`, 0, "")
 				cs.Register("git remote rename origin upstream", 0, "")
 				cs.Register(`git remote add origin https://github.com/monalisa/REPO.git`, 0, "")
@@ -886,8 +852,6 @@ func Test_createRun(t *testing.T) {
 					}))
 			},
 			cmdStubs: func(cs *run.CommandStubber) {
-				cs.Register(`git config remote.pushDefault`, 1, "")
-				cs.Register(`git rev-parse --verify --quiet --abbrev-ref feature@\{push\}`, 1, "")
 				cs.Register("git show-ref --verify", 0, heredoc.Doc(`
 			deadbeef HEAD
 			deadb00f refs/remotes/upstream/feature
@@ -925,8 +889,6 @@ func Test_createRun(t *testing.T) {
 			branch.feature.remote origin
 			branch.feature.merge refs/heads/my-feat2
 		`)) // determineTrackingBranch
-				cs.Register(`git config remote.pushDefault`, 1, "")
-				cs.Register(`git rev-parse --verify --quiet --abbrev-ref feature@\{push\}`, 0, "origin/my-feat2")
 				cs.Register("git show-ref --verify", 0, heredoc.Doc(`
 			deadbeef HEAD
 			deadbeef refs/remotes/origin/my-feat2
@@ -967,8 +929,6 @@ func Test_createRun(t *testing.T) {
 					}))
 			},
 			cmdStubs: func(cs *run.CommandStubber) {
-				cs.Register(`git config remote.pushDefault`, 1, "")
-				cs.Register(`git rev-parse --verify --quiet --abbrev-ref feature@\{push\}`, 1, "")
 				cs.Register(`git( .+)? log( .+)? origin/master\.\.\.feature`, 0, "d3476a1\u0000commit 0\u0000\u0000\n7a6ea13\u0000commit 1\u0000\u0000")
 			},
 			promptStubs: func(pm *prompter.PrompterMock) {
@@ -1008,10 +968,6 @@ func Test_createRun(t *testing.T) {
 				opts.Reviewers = []string{"hubot", "monalisa", "/core", "/robots"}
 				opts.Milestone = "big one.oh"
 				return func() {}
-			},
-			cmdStubs: func(cs *run.CommandStubber) {
-				cs.Register(`git config remote.pushDefault`, 1, "")
-				cs.Register(`git rev-parse --verify --quiet --abbrev-ref feature@\{push\}`, 1, "")
 			},
 			httpStubs: func(reg *httpmock.Registry, t *testing.T) {
 				reg.Register(
@@ -1100,10 +1056,6 @@ func Test_createRun(t *testing.T) {
 				opts.Finder = shared.NewMockFinder("feature", &api.PullRequest{URL: "https://github.com/OWNER/REPO/pull/123"}, ghrepo.New("OWNER", "REPO"))
 				return func() {}
 			},
-			cmdStubs: func(cs *run.CommandStubber) {
-				cs.Register(`git config remote.pushDefault`, 1, "")
-				cs.Register(`git rev-parse --verify --quiet --abbrev-ref feature@\{push\}`, 1, "")
-			},
 			wantErr: "a pull request for branch \"feature\" into branch \"master\" already exists:\nhttps://github.com/OWNER/REPO/pull/123",
 		},
 		{
@@ -1120,8 +1072,6 @@ func Test_createRun(t *testing.T) {
 					httpmock.StringResponse(`{"data": {"viewer": {"login": "OWNER"} } }`))
 			},
 			cmdStubs: func(cs *run.CommandStubber) {
-				cs.Register(`git config remote.pushDefault`, 1, "")
-				cs.Register(`git rev-parse --verify --quiet --abbrev-ref feature@\{push\}`, 1, "")
 				cs.Register(`git show-ref --verify -- HEAD refs/remotes/origin/feature`, 0, "")
 				cs.Register(`git( .+)? log( .+)? origin/master\.\.\.feature`, 0, "")
 				cs.Register(`git push --set-upstream origin HEAD:refs/heads/feature`, 0, "")
@@ -1154,8 +1104,6 @@ func Test_createRun(t *testing.T) {
 				mockRetrieveProjects(t, reg)
 			},
 			cmdStubs: func(cs *run.CommandStubber) {
-				cs.Register(`git config remote.pushDefault`, 1, "")
-				cs.Register(`git rev-parse --verify --quiet --abbrev-ref feature@\{push\}`, 1, "")
 				cs.Register(`git show-ref --verify -- HEAD refs/remotes/origin/feature`, 0, "")
 				cs.Register(`git( .+)? log( .+)? origin/master\.\.\.feature`, 0, "")
 				cs.Register(`git push --set-upstream origin HEAD:refs/heads/feature`, 0, "")
@@ -1203,8 +1151,6 @@ func Test_createRun(t *testing.T) {
 					}))
 			},
 			cmdStubs: func(cs *run.CommandStubber) {
-				cs.Register(`git config remote.pushDefault`, 1, "")
-				cs.Register(`git rev-parse --verify --quiet --abbrev-ref feature@\{push\}`, 1, "")
 				cs.Register(`git -c log.ShowSignature=false log --pretty=format:%H%x00%s%x00%b%x00 --cherry origin/master...feature`, 0, "")
 				cs.Register(`git rev-parse --show-toplevel`, 0, "")
 			},
@@ -1264,8 +1210,6 @@ func Test_createRun(t *testing.T) {
 					}))
 			},
 			cmdStubs: func(cs *run.CommandStubber) {
-				cs.Register(`git config remote.pushDefault`, 1, "")
-				cs.Register(`git rev-parse --verify --quiet --abbrev-ref feature@\{push\}`, 1, "")
 				cs.Register(`git( .+)? log( .+)? origin/master\.\.\.feature`, 0, "")
 			},
 			promptStubs: func(pm *prompter.PrompterMock) {
@@ -1314,8 +1258,6 @@ func Test_createRun(t *testing.T) {
 		{
 			name: "web long URL",
 			cmdStubs: func(cs *run.CommandStubber) {
-				cs.Register(`git config remote.pushDefault`, 1, "")
-				cs.Register(`git rev-parse --verify --quiet --abbrev-ref feature@\{push\}`, 1, "")
 				cs.Register(`git( .+)? log( .+)? origin/master\.\.\.feature`, 0, "")
 			},
 			setup: func(opts *CreateOptions, t *testing.T) func() {
@@ -1342,10 +1284,6 @@ func Test_createRun(t *testing.T) {
 				}
 				return func() {}
 			},
-			cmdStubs: func(cs *run.CommandStubber) {
-				cs.Register(`git config remote.pushDefault`, 1, "")
-				cs.Register(`git rev-parse --verify --quiet --abbrev-ref feature@\{push\}`, 1, "")
-			},
 			httpStubs: func(reg *httpmock.Registry, t *testing.T) {
 				reg.Register(
 					httpmock.GraphQL(`mutation PullRequestCreate\b`),
@@ -1365,8 +1303,6 @@ func Test_createRun(t *testing.T) {
 				return func() {}
 			},
 			cmdStubs: func(cs *run.CommandStubber) {
-				cs.Register(`git config remote.pushDefault`, 1, "")
-				cs.Register(`git rev-parse --verify --quiet --abbrev-ref feature@\{push\}`, 1, "")
 				cs.Register(
 					"git -c log.ShowSignature=false log --pretty=format:%H%x00%s%x00%b%x00 --cherry origin/master...feature",
 					0,
@@ -1442,8 +1378,6 @@ func Test_createRun(t *testing.T) {
 				return func() {}
 			},
 			cmdStubs: func(cs *run.CommandStubber) {
-				cs.Register(`git config remote.pushDefault`, 1, "")
-				cs.Register(`git rev-parse --verify --quiet --abbrev-ref feature@\{push\}`, 1, "")
 				cs.Register(
 					"git -c log.ShowSignature=false log --pretty=format:%H%x00%s%x00%b%x00 --cherry origin/master...feature",
 					0,
@@ -1480,8 +1414,6 @@ func Test_createRun(t *testing.T) {
 				return func() {}
 			},
 			cmdStubs: func(cs *run.CommandStubber) {
-				cs.Register(`git config remote.pushDefault`, 1, "")
-				cs.Register(`git rev-parse --verify --quiet --abbrev-ref feature@\{push\}`, 1, "")
 				cs.Register(
 					"git -c log.ShowSignature=false log --pretty=format:%H%x00%s%x00%b%x00 --cherry origin/master...feature",
 					0,
@@ -1532,8 +1464,6 @@ func Test_createRun(t *testing.T) {
 				return func() {}
 			},
 			cmdStubs: func(cs *run.CommandStubber) {
-				cs.Register(`git config remote.pushDefault`, 1, "")
-				cs.Register(`git rev-parse --verify --quiet --abbrev-ref feature@\{push\}`, 1, "")
 				cs.Register("git -c log.ShowSignature=false log --pretty=format:%H%x00%s%x00%b%x00 --cherry origin/master...feature", 0, "")
 			},
 			expectedOut: "https://github.com/OWNER/REPO/pull/12\n",
@@ -1593,8 +1523,6 @@ func Test_createRun(t *testing.T) {
 					deadbeef HEAD
 					deadb00f refs/remotes/upstream/feature/feat2
 					deadbeef refs/remotes/origin/task1`)) // determineTrackingBranch
-				cs.Register(`git config remote.pushDefault`, 1, "")
-				cs.Register(`git rev-parse --verify --quiet --abbrev-ref task1@\{push\}`, 1, "")
 			},
 			expectedOut:    "https://github.com/OWNER/REPO/pull/12\n",
 			expectedErrOut: "\nCreating pull request for monalisa:task1 into feature/feat2 in OWNER/REPO\n\n",
@@ -1705,9 +1633,6 @@ func Test_tryDetermineTrackingRef(t *testing.T) {
 		{
 			name: "empty",
 			cmdStubs: func(cs *run.CommandStubber) {
-				cs.Register(`git config --get-regexp.+branch\\\.feature\\\.`, 0, "")
-				cs.Register(`git config remote.pushDefault`, 1, "")
-				cs.Register(`git rev-parse --verify --quiet --abbrev-ref feature@\{push\}`, 1, "")
 				cs.Register(`git show-ref --verify -- HEAD`, 0, "abc HEAD")
 			},
 			headBranchConfig:    git.BranchConfig{},
@@ -1717,9 +1642,6 @@ func Test_tryDetermineTrackingRef(t *testing.T) {
 		{
 			name: "no match",
 			cmdStubs: func(cs *run.CommandStubber) {
-				cs.Register(`git config --get-regexp.+branch\\\.feature\\\.`, 0, "")
-				cs.Register(`git config remote.pushDefault`, 1, "")
-				cs.Register(`git rev-parse --verify --quiet --abbrev-ref feature@\{push\}`, 1, "")
 				cs.Register("git show-ref --verify -- HEAD refs/remotes/upstream/feature refs/remotes/origin/feature", 0, "abc HEAD\nbca refs/remotes/upstream/feature")
 			},
 			headBranchConfig: git.BranchConfig{},
@@ -1739,9 +1661,6 @@ func Test_tryDetermineTrackingRef(t *testing.T) {
 		{
 			name: "match",
 			cmdStubs: func(cs *run.CommandStubber) {
-				cs.Register(`git config --get-regexp.+branch\\\.feature\\\.`, 0, "")
-				cs.Register(`git config remote.pushDefault`, 1, "")
-				cs.Register(`git rev-parse --verify --quiet --abbrev-ref feature@\{push\}`, 0, "origin/feature")
 				cs.Register(`git show-ref --verify -- HEAD refs/remotes/upstream/feature refs/remotes/origin/feature$`, 0, heredoc.Doc(`
 		deadbeef HEAD
 		deadb00f refs/remotes/upstream/feature
@@ -1768,12 +1687,6 @@ func Test_tryDetermineTrackingRef(t *testing.T) {
 		{
 			name: "respect tracking config",
 			cmdStubs: func(cs *run.CommandStubber) {
-				cs.Register(`git config --get-regexp.+branch\\\.feature\\\.`, 0, heredoc.Doc(`
-		branch.feature.remote origin
-		branch.feature.merge refs/heads/great-feat
-	`))
-				cs.Register(`git config remote.pushDefault`, 1, "")
-				cs.Register(`git rev-parse --verify --quiet --abbrev-ref feature@\{push\}`, 0, "origin/great-feat")
 				cs.Register(`git show-ref --verify -- HEAD refs/remotes/origin/great-feat refs/remotes/origin/feature$`, 0, heredoc.Doc(`
 		deadbeef HEAD
 		deadb00f refs/remotes/origin/feature

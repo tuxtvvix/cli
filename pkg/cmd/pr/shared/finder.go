@@ -97,6 +97,12 @@ type FindOptions struct {
 	States []string
 }
 
+// TODO: Does this also need the BaseBranchName?
+// PR's are represented by the following:
+// baseRef -----PR-----> headRef
+//
+// A ref is described as "remoteName/branchName", so
+// baseRepoName/baseBranchName -----PR-----> headRepoName/headBranchName
 type PRRefs struct {
 	BranchName string
 	HeadRepo   ghrepo.Interface
