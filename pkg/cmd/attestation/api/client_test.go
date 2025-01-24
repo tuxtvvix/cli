@@ -283,7 +283,7 @@ func TestGetBundle_Retry(t *testing.T) {
 		logger:     io.NewTestHandler(),
 	}
 
-	b, err := c.getBundle("whatever")
+	b, err := c.getBundle("mybundleurl")
 	require.NoError(t, err)
 	require.Equal(t, "application/vnd.dev.sigstore.bundle.v0.3+json", b.GetMediaType())
 	mockHTTPClient.AssertNumberOfCalls(t, "OnGetFailAfterNCalls", 2)
@@ -296,7 +296,7 @@ func TestGetBundle_Fail(t *testing.T) {
 		logger:     io.NewTestHandler(),
 	}
 
-	b, err := c.getBundle("whatever")
+	b, err := c.getBundle("mybundleurl")
 	require.Error(t, err)
 	require.Nil(t, b)
 	mockHTTPClient.AssertNumberOfCalls(t, "OnGetFail", 1)
