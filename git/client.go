@@ -408,15 +408,10 @@ func (c *Client) ReadBranchConfig(ctx context.Context, branch string) (BranchCon
 		return BranchConfig{}, err
 	}
 
-	// Check to see if we can resolve the @{push} revision syntax. This is the easiest way to get
-	// the name of the push remote.
-	// We ignore errors resolving simple push.Default settings as these are handled downstream
-	revParseOut, _ := c.revParse(ctx, "--verify", "--quiet", "--abbrev-ref", branch+"@{push}")
-
-	return parseBranchConfig(outputLines(branchCfgOut), strings.TrimSuffix(remotePushDefaultOut, "\n"), firstLine(revParseOut)), nil
+	return parseBranchConfig(outputLines(branchCfgOut), strings.TrimSuffix(remotePushDefaultOut, "\n")), nil
 }
 
-func parseBranchConfig(branchConfigLines []string, remotePushDefault string, revParse string) BranchConfig {
+func parseBranchConfig(branchConfigLines []string, remotePushDefault string) BranchConfig {
 	var cfg BranchConfig
 
 	// Read the config lines for the specific branch
@@ -460,9 +455,6 @@ func parseBranchConfig(branchConfigLines []string, remotePushDefault string, rev
 		}
 	}
 
-	// The value returned by revParse is the easiest way to get the name of the push ref
-	cfg.Push = revParse
-
 	// Some `gh pr` workflows don't work if this is set to 'simple' or 'current'
 	cfg.RemotePushDefault = remotePushDefault
 
@@ -495,6 +487,15 @@ func (c *Client) PushDefault(ctx context.Context) (string, error) {
 		return "simple", nil
 	}
 	return "", err
+}
+
+// ParsePushRevision gets the value of the @{push} revision syntax
+// An error here doesn't necessarily mean something are broke, but may mean that the @{push}
+// revision syntax couldn't be resolved, such as in non-centralized workflows with
+// push.default = simple. Downstream consumers should consider how to handle this error.
+func (c *Client) ParsePushRevision(ctx context.Context, branch string) (string, error) {
+	revParseOut, err := c.revParse(ctx, "--abbrev-ref", branch+"@{push}")
+	return firstLine(revParseOut), err
 }
 
 func (c *Client) DeleteLocalTag(ctx context.Context, tag string) error {

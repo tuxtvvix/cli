@@ -33,13 +33,14 @@ type progressIndicator interface {
 }
 
 type finder struct {
-	baseRepoFn   func() (ghrepo.Interface, error)
-	branchFn     func() (string, error)
-	remotesFn    func() (remotes.Remotes, error)
-	httpClient   func() (*http.Client, error)
-	pushDefault  func() (string, error)
-	branchConfig func(string) (git.BranchConfig, error)
-	progress     progressIndicator
+	baseRepoFn        func() (ghrepo.Interface, error)
+	branchFn          func() (string, error)
+	remotesFn         func() (remotes.Remotes, error)
+	httpClient        func() (*http.Client, error)
+	pushDefault       func() (string, error)
+	parsePushRevision func(string) (string, error)
+	branchConfig      func(string) (git.BranchConfig, error)
+	progress          progressIndicator
 
 	baseRefRepo ghrepo.Interface
 	prNumber    int
@@ -60,6 +61,9 @@ func NewFinder(factory *cmdutil.Factory) PRFinder {
 		httpClient: factory.HttpClient,
 		pushDefault: func() (string, error) {
 			return factory.GitClient.PushDefault(context.Background())
+		},
+		parsePushRevision: func(branch string) (string, error) {
+			return factory.GitClient.ParsePushRevision(context.Background(), branch)
 		},
 		progress: factory.IOStreams,
 		branchConfig: func(s string) (git.BranchConfig, error) {
@@ -213,7 +217,10 @@ func (f *finder) Find(opts FindOptions) (*api.PullRequest, ghrepo.Interface, err
 			return nil, nil, err
 		}
 
-		prRefs, err := parsePRRefs(f.branchName, branchConfig, pushDefault, f.baseRefRepo, rems)
+		// Suppressing the error as we have other means of computing the PRRefs if this fails.
+		parsedPushRevision, _ := f.parsePushRevision(f.branchName)
+
+		prRefs, err := parsePRRefs(f.branchName, branchConfig, parsedPushRevision, pushDefault, f.baseRefRepo, rems)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -280,18 +287,18 @@ func (f *finder) parseURL(prURL string) (ghrepo.Interface, int, error) {
 	return repo, prNumber, nil
 }
 
-func parsePRRefs(currentBranchName string, branchConfig git.BranchConfig, pushDefault string, baseRefRepo ghrepo.Interface, rems remotes.Remotes) (PRRefs, error) {
+func parsePRRefs(currentBranchName string, branchConfig git.BranchConfig, parsedPushRevision string, pushDefault string, baseRefRepo ghrepo.Interface, rems remotes.Remotes) (PRRefs, error) {
 	prRefs := PRRefs{
 		BaseRepo: baseRefRepo,
 	}
 
 	// If @{push} resolves, then we have all the information we need to determine the head repo
 	// and branch name. It is of the form <remote>/<branch>.
-	if branchConfig.Push != "" {
+	if parsedPushRevision != "" {
 		for _, r := range rems {
 			// Find the remote who's name matches the push <remote> prefix
-			if strings.HasPrefix(branchConfig.Push, r.Name+"/") {
-				prRefs.BranchName = strings.TrimPrefix(branchConfig.Push, r.Name+"/")
+			if strings.HasPrefix(parsedPushRevision, r.Name+"/") {
+				prRefs.BranchName = strings.TrimPrefix(parsedPushRevision, r.Name+"/")
 				prRefs.HeadRepo = r.Repo
 				return prRefs, nil
 			}
@@ -301,7 +308,7 @@ func parsePRRefs(currentBranchName string, branchConfig git.BranchConfig, pushDe
 		for i, r := range rems {
 			remoteNames[i] = r.Name
 		}
-		return PRRefs{}, fmt.Errorf("no remote for %q found in %q", branchConfig.Push, strings.Join(remoteNames, ", "))
+		return PRRefs{}, fmt.Errorf("no remote for %q found in %q", parsedPushRevision, strings.Join(remoteNames, ", "))
 	}
 
 	// To get the HeadRepo, we look to the git config. The PushRemote{Name | URL} comes from

@@ -68,8 +68,7 @@ type BranchConfig struct {
 	MergeRef  string
 	// These are used to handle triangular workflows. They can be defined by either
 	// a remote.pushDefault or a branch.<name>.pushremote value set on the git config.
-	RemotePushDefault string
 	PushRemoteURL     *url.URL
 	PushRemoteName    string
-	Push              string
+	RemotePushDefault string
 }
