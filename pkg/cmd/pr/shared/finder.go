@@ -59,17 +59,7 @@ func NewFinder(factory *cmdutil.Factory) PRFinder {
 		remotesFn:  factory.Remotes,
 		httpClient: factory.HttpClient,
 		pushDefault: func() (string, error) {
-			pushDefault, err := factory.GitClient.Config(context.Background(), "push.default")
-			if err == nil {
-				return pushDefault, nil
-			}
-
-			var gitErr *git.GitError
-			if ok := errors.As(err, &gitErr); ok && gitErr.ExitCode == 1 {
-				return "simple", nil
-			}
-
-			return "", err
+			return factory.GitClient.PushDefault(context.Background())
 		},
 		progress: factory.IOStreams,
 		branchConfig: func(s string) (git.BranchConfig, error) {

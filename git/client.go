@@ -482,6 +482,21 @@ func (c *Client) SetBranchConfig(ctx context.Context, branch, name, value string
 	return err
 }
 
+// PushDefault returns the value of push.default in the config. If the value
+// is not set, it returns "simple" (the default value).
+func (c *Client) PushDefault(ctx context.Context) (string, error) {
+	pushDefault, err := c.Config(ctx, "push.default")
+	if err == nil {
+		return pushDefault, nil
+	}
+
+	var gitError *GitError
+	if ok := errors.As(err, &gitError); ok && gitError.ExitCode == 1 {
+		return "simple", nil
+	}
+	return "", err
+}
+
 func (c *Client) DeleteLocalTag(ctx context.Context, tag string) error {
 	args := []string{"tag", "-d", tag}
 	cmd, err := c.Command(ctx, args...)

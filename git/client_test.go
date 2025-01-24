@@ -1191,6 +1191,68 @@ func Test_parseRemoteURLOrName(t *testing.T) {
 	}
 }
 
+func TestClientPushDefault(t *testing.T) {
+	tests := []struct {
+		name            string
+		commandResult   commandResult
+		wantPushDefault string
+		wantError       *GitError
+	}{
+		{
+			name: "push default is not set",
+			commandResult: commandResult{
+				ExitStatus: 1,
+				Stderr:     "error: key does not contain a section: remote.pushDefault",
+			},
+			wantPushDefault: "simple",
+			wantError:       nil,
+		},
+		{
+			name: "push default is set to current",
+			commandResult: commandResult{
+				ExitStatus: 0,
+				Stdout:     "current",
+			},
+			wantPushDefault: "current",
+			wantError:       nil,
+		},
+		{
+			name: "push default errors",
+			commandResult: commandResult{
+				ExitStatus: 128,
+				Stderr:     "fatal: git error",
+			},
+			wantPushDefault: "",
+			wantError: &GitError{
+				ExitCode: 128,
+				Stderr:   "fatal: git error",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cmdCtx := createMockedCommandContext(t, mockedCommands{
+				`path/to/git config push.default`: tt.commandResult,
+			},
+			)
+			client := Client{
+				GitPath:        "path/to/git",
+				commandContext: cmdCtx,
+			}
+			pushDefault, err := client.PushDefault(context.Background())
+			if tt.wantError != nil {
+				var gitError *GitError
+				require.ErrorAs(t, err, &gitError)
+				assert.Equal(t, tt.wantError.ExitCode, gitError.ExitCode)
+				assert.Equal(t, tt.wantError.Stderr, gitError.Stderr)
+			} else {
+				require.NoError(t, err)
+			}
+			assert.Equal(t, tt.wantPushDefault, pushDefault)
+		})
+	}
+}
+
 func TestClientDeleteLocalTag(t *testing.T) {
 	tests := []struct {
 		name          string
