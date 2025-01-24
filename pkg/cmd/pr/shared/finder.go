@@ -99,7 +99,7 @@ type PRRefs struct {
 // either just the branch name or, if the PR is originating from a fork, the fork owner
 // and the branch name, like <owner>:<branch>.
 func (s *PRRefs) GetPRLabel() string {
-	if s.HeadRepo == s.BaseRepo {
+	if ghrepo.IsSame(s.HeadRepo, s.BaseRepo) {
 		return s.BranchName
 	}
 	return fmt.Sprintf("%s:%s", s.HeadRepo.RepoOwner(), s.BranchName)
@@ -296,6 +296,12 @@ func parsePRRefs(currentBranchName string, branchConfig git.BranchConfig, pushDe
 				return prRefs, nil
 			}
 		}
+
+		remoteNames := make([]string, len(rems))
+		for i, r := range rems {
+			remoteNames[i] = r.Name
+		}
+		return PRRefs{}, fmt.Errorf("no remote for %q found in %q", branchConfig.Push, strings.Join(remoteNames, ", "))
 	}
 
 	// To get the HeadRepo, we look to the git config. The PushRemote{Name | URL} comes from

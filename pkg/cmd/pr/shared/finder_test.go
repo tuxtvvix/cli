@@ -2,6 +2,7 @@ package shared
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"testing"
@@ -70,7 +71,7 @@ func TestFind(t *testing.T) {
 			args: args{
 				selector:   "13",
 				fields:     []string{"id", "number"},
-				baseRepoFn: stubBaseRepoFn(remoteOrigin.Repo, nil),
+				baseRepoFn: stubBaseRepoFn(ghrepo.New("ORIGINOWNER", "REPO"), nil),
 				branchFn: func() (string, error) {
 					return "blueberries", nil
 				},
@@ -92,7 +93,7 @@ func TestFind(t *testing.T) {
 				selector:   "13",
 				baseBranch: "main",
 				fields:     []string{"id", "number"},
-				baseRepoFn: stubBaseRepoFn(remoteOrigin.Repo, nil),
+				baseRepoFn: stubBaseRepoFn(ghrepo.New("ORIGINOWNER", "REPO"), nil),
 				branchFn: func() (string, error) {
 					return "blueberries", nil
 				},
@@ -147,7 +148,7 @@ func TestFind(t *testing.T) {
 			args: args{
 				selector:   "13",
 				fields:     []string{"number"},
-				baseRepoFn: stubBaseRepoFn(remoteOrigin.Repo, nil),
+				baseRepoFn: stubBaseRepoFn(ghrepo.New("ORIGINOWNER", "REPO"), nil),
 				branchFn: func() (string, error) {
 					return "blueberries", nil
 				},
@@ -163,7 +164,7 @@ func TestFind(t *testing.T) {
 			args: args{
 				selector:   "#13",
 				fields:     []string{"id", "number"},
-				baseRepoFn: stubBaseRepoFn(remoteOrigin.Repo, nil),
+				baseRepoFn: stubBaseRepoFn(ghrepo.New("ORIGINOWNER", "REPO"), nil),
 				branchFn: func() (string, error) {
 					return "blueberries", nil
 				},
@@ -207,7 +208,7 @@ func TestFind(t *testing.T) {
 			args: args{
 				selector:   "blueberries",
 				fields:     []string{"id", "number"},
-				baseRepoFn: stubBaseRepoFn(remoteOrigin.Repo, nil),
+				baseRepoFn: stubBaseRepoFn(ghrepo.New("ORIGINOWNER", "REPO"), nil),
 				branchFn: func() (string, error) {
 					return "blueberries", nil
 				},
@@ -370,7 +371,7 @@ func TestFind(t *testing.T) {
 			args: args{
 				selector:   "",
 				fields:     []string{"id", "number"},
-				baseRepoFn: stubBaseRepoFn(remoteOrigin.Repo, nil),
+				baseRepoFn: stubBaseRepoFn(ghrepo.New("ORIGINOWNER", "REPO"), nil),
 				branchFn: func() (string, error) {
 					return "blueberries", nil
 				},
@@ -404,7 +405,7 @@ func TestFind(t *testing.T) {
 			args: args{
 				selector:   "",
 				fields:     []string{"id", "number"},
-				baseRepoFn: stubBaseRepoFn(remoteOrigin.Repo, nil),
+				baseRepoFn: stubBaseRepoFn(ghrepo.New("ORIGINOWNER", "REPO"), nil),
 				branchFn: func() (string, error) {
 					return "blueberries", nil
 				},
@@ -438,7 +439,7 @@ func TestFind(t *testing.T) {
 			args: args{
 				selector:   "",
 				fields:     []string{"id", "number"},
-				baseRepoFn: stubBaseRepoFn(remoteOrigin.Repo, nil),
+				baseRepoFn: stubBaseRepoFn(ghrepo.New("ORIGINOWNER", "REPO"), nil),
 				branchFn: func() (string, error) {
 					return "blueberries", nil
 				},
@@ -691,21 +692,18 @@ func Test_parsePRRefs(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name: "When the branch name doesn't match a different branch name in BranchConfig.Push, it returns the BranchConfig.Push branch name",
+			name: "When the push revision doesn't match a remote, it returns an error",
 			branchConfig: git.BranchConfig{
 				Push: "origin/differentPushBranch",
 			},
 			currentBranchName: "blueberries",
 			baseRefRepo:       remoteOrigin.Repo,
 			rems: context.Remotes{
-				&remoteOrigin,
+				&remoteUpstream,
+				&remoteOther,
 			},
-			wantPRRefs: PRRefs{
-				BranchName: "differentPushBranch",
-				HeadRepo:   remoteOrigin.Repo,
-				BaseRepo:   remoteOrigin.Repo,
-			},
-			wantErr: nil,
+			wantPRRefs: PRRefs{},
+			wantErr:    fmt.Errorf("no remote for %q found in %q", "origin/differentPushBranch", "upstream, other"),
 		},
 		{
 			name: "When the branch name doesn't match a different branch name in BranchConfig.Push and the remote isn't 'origin', it returns the BranchConfig.Push branch name",
@@ -823,12 +821,11 @@ func Test_parsePRRefs(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			prRefs, err := parsePRRefs(tt.currentBranchName, tt.branchConfig, tt.pushDefault, tt.baseRefRepo, tt.rems)
 			if tt.wantErr != nil {
-				require.Error(t, err)
-				assert.Equal(t, tt.wantErr, err)
+				require.Equal(t, tt.wantErr, err)
 			} else {
 				require.NoError(t, err)
 			}
-			assert.Equal(t, tt.wantPRRefs, prRefs)
+			require.Equal(t, tt.wantPRRefs, prRefs)
 		})
 	}
 }
