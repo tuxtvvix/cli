@@ -66,8 +66,7 @@ type BranchConfig struct {
 	// MergeBase is the optional base branch to target in a new PR if `--base` is not specified.
 	MergeBase string
 	MergeRef  string
-	// These are used to handle triangular workflows. They can be defined by either
-	// a remote.pushDefault or a branch.<name>.pushremote value set on the git config.
+	// These are usually used to handle triangular workflows.
 	PushRemoteURL  *url.URL
 	PushRemoteName string
 }
