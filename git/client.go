@@ -402,16 +402,10 @@ func (c *Client) ReadBranchConfig(ctx context.Context, branch string) (BranchCon
 		return BranchConfig{}, nil
 	}
 
-	// Check to see if there is a pushDefault ref set for the repo
-	remotePushDefaultOut, err := c.Config(ctx, "remote.pushDefault")
-	if ok := errors.As(err, &gitError); ok && gitError.ExitCode != 1 {
-		return BranchConfig{}, err
-	}
-
-	return parseBranchConfig(outputLines(branchCfgOut), strings.TrimSuffix(remotePushDefaultOut, "\n")), nil
+	return parseBranchConfig(outputLines(branchCfgOut)), nil
 }
 
-func parseBranchConfig(branchConfigLines []string, remotePushDefault string) BranchConfig {
+func parseBranchConfig(branchConfigLines []string) BranchConfig {
 	var cfg BranchConfig
 
 	// Read the config lines for the specific branch
@@ -437,26 +431,6 @@ func parseBranchConfig(branchConfigLines []string, remotePushDefault string) Bra
 			cfg.MergeBase = parts[1]
 		}
 	}
-
-	// PushRemote{URL|Name} takes precedence over remotePushDefault, so we'll only
-	// use remotePushDefault if we don't have a push remote.
-	if cfg.PushRemoteURL == nil && cfg.PushRemoteName == "" {
-		// remotePushDefault usually indicates a "triangular" workflow
-		if remotePushDefault != "" {
-			pushRemoteURL, pushRemoteName := parseRemoteURLOrName(remotePushDefault)
-			cfg.PushRemoteURL = pushRemoteURL
-			cfg.PushRemoteName = pushRemoteName
-		} else {
-			// Without a PushRemote{URL|Name} or a remotePushDefault, we assume that the
-			// push remote ref is the same as the remote ref. This is likely
-			// a "centralized" workflow.
-			cfg.PushRemoteName = cfg.RemoteName
-			cfg.PushRemoteURL = cfg.RemoteURL
-		}
-	}
-
-	// Some `gh pr` workflows don't work if this is set to 'simple' or 'current'
-	cfg.RemotePushDefault = remotePushDefault
 
 	return cfg
 }
@@ -486,6 +460,22 @@ func (c *Client) PushDefault(ctx context.Context) (string, error) {
 	if ok := errors.As(err, &gitError); ok && gitError.ExitCode == 1 {
 		return "simple", nil
 	}
+	return "", err
+}
+
+// RemotePushDefault returns the value of remote.pushDefault in the config. If
+// the value is not set, it returns an empty string.
+func (c *Client) RemotePushDefault(ctx context.Context) (string, error) {
+	remotePushDefault, err := c.Config(ctx, "remote.pushDefault")
+	if err == nil {
+		return remotePushDefault, nil
+	}
+
+	var gitError *GitError
+	if ok := errors.As(err, &gitError); ok && gitError.ExitCode == 1 {
+		return "", nil
+	}
+
 	return "", err
 }
 

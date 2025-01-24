@@ -20,6 +20,7 @@ type args struct {
 	branchFn          func() (string, error)
 	branchConfig      func(string) (git.BranchConfig, error)
 	pushDefault       func() (string, error)
+	remotePushDefault func() (string, error)
 	parsePushRevision func(string) (string, error)
 	selector          string
 	fields            []string
@@ -102,6 +103,7 @@ func TestFind(t *testing.T) {
 					PushRemoteName: remoteOrigin.Remote.Name,
 				}, nil),
 				pushDefault:       stubPushDefault("simple", nil),
+				remotePushDefault: stubRemotePushDefault("", nil),
 				parsePushRevision: stubParsedPushRevision("", nil),
 			},
 			httpStub: func(r *httpmock.Registry) {
@@ -132,8 +134,9 @@ func TestFind(t *testing.T) {
 				branchFn: func() (string, error) {
 					return "blueberries", nil
 				},
-				branchConfig: stubBranchConfig(git.BranchConfig{}, nil),
-				pushDefault:  stubPushDefault("simple", nil),
+				branchConfig:      stubBranchConfig(git.BranchConfig{}, nil),
+				pushDefault:       stubPushDefault("simple", nil),
+				remotePushDefault: stubRemotePushDefault("", nil),
 			},
 			wantErr: true,
 		},
@@ -154,8 +157,9 @@ func TestFind(t *testing.T) {
 				branchFn: func() (string, error) {
 					return "blueberries", nil
 				},
-				branchConfig: stubBranchConfig(git.BranchConfig{}, nil),
-				pushDefault:  stubPushDefault("simple", nil),
+				branchConfig:      stubBranchConfig(git.BranchConfig{}, nil),
+				pushDefault:       stubPushDefault("simple", nil),
+				remotePushDefault: stubRemotePushDefault("", nil),
 			},
 			httpStub: nil,
 			wantPR:   13,
@@ -170,8 +174,9 @@ func TestFind(t *testing.T) {
 				branchFn: func() (string, error) {
 					return "blueberries", nil
 				},
-				branchConfig: stubBranchConfig(git.BranchConfig{}, nil),
-				pushDefault:  stubPushDefault("simple", nil),
+				branchConfig:      stubBranchConfig(git.BranchConfig{}, nil),
+				pushDefault:       stubPushDefault("simple", nil),
+				remotePushDefault: stubRemotePushDefault("", nil),
 			},
 			httpStub: func(r *httpmock.Registry) {
 				r.Register(
@@ -192,8 +197,9 @@ func TestFind(t *testing.T) {
 				branchFn: func() (string, error) {
 					return "blueberries", nil
 				},
-				branchConfig: stubBranchConfig(git.BranchConfig{}, nil),
-				pushDefault:  stubPushDefault("simple", nil),
+				branchConfig:      stubBranchConfig(git.BranchConfig{}, nil),
+				pushDefault:       stubPushDefault("simple", nil),
+				remotePushDefault: stubRemotePushDefault("", nil),
 			},
 			httpStub: func(r *httpmock.Registry) {
 				r.Register(
@@ -217,6 +223,7 @@ func TestFind(t *testing.T) {
 				branchConfig:      stubBranchConfig(git.BranchConfig{}, nil),
 				pushDefault:       stubPushDefault("simple", nil),
 				parsePushRevision: stubParsedPushRevision("", nil),
+				remotePushDefault: stubRemotePushDefault("", nil),
 			},
 			httpStub: func(r *httpmock.Registry) {
 				r.Register(
@@ -259,6 +266,7 @@ func TestFind(t *testing.T) {
 				},
 				branchConfig:      stubBranchConfig(git.BranchConfig{}, nil),
 				pushDefault:       stubPushDefault("simple", nil),
+				remotePushDefault: stubRemotePushDefault("", nil),
 				parsePushRevision: stubParsedPushRevision("", nil),
 			},
 			httpStub: func(r *httpmock.Registry) {
@@ -301,6 +309,7 @@ func TestFind(t *testing.T) {
 				},
 				branchConfig:      stubBranchConfig(git.BranchConfig{}, nil),
 				pushDefault:       stubPushDefault("simple", nil),
+				remotePushDefault: stubRemotePushDefault("", nil),
 				parsePushRevision: stubParsedPushRevision("", nil),
 			},
 			httpStub: func(r *httpmock.Registry) {
@@ -335,6 +344,7 @@ func TestFind(t *testing.T) {
 				},
 				branchConfig:      stubBranchConfig(git.BranchConfig{}, nil),
 				pushDefault:       stubPushDefault("simple", nil),
+				remotePushDefault: stubRemotePushDefault("", nil),
 				parsePushRevision: stubParsedPushRevision("", nil),
 			},
 			httpStub: func(r *httpmock.Registry) {
@@ -386,6 +396,7 @@ func TestFind(t *testing.T) {
 					PushRemoteName: "upstream",
 				}, nil),
 				pushDefault:       stubPushDefault("upstream", nil),
+				remotePushDefault: stubRemotePushDefault("", nil),
 				parsePushRevision: stubParsedPushRevision("", nil),
 			},
 			httpStub: func(r *httpmock.Registry) {
@@ -421,6 +432,7 @@ func TestFind(t *testing.T) {
 					PushRemoteURL: remoteUpstream.Remote.FetchURL,
 				}, nil),
 				pushDefault:       stubPushDefault("upstream", nil),
+				remotePushDefault: stubRemotePushDefault("", nil),
 				parsePushRevision: stubParsedPushRevision("", nil),
 			},
 			httpStub: func(r *httpmock.Registry) {
@@ -453,6 +465,7 @@ func TestFind(t *testing.T) {
 				},
 				branchConfig:      stubBranchConfig(git.BranchConfig{}, nil),
 				pushDefault:       stubPushDefault("simple", nil),
+				remotePushDefault: stubRemotePushDefault("", nil),
 				parsePushRevision: stubParsedPushRevision("other/blueberries", nil),
 			},
 			httpStub: func(r *httpmock.Registry) {
@@ -513,7 +526,8 @@ func TestFind(t *testing.T) {
 				branchConfig: stubBranchConfig(git.BranchConfig{
 					MergeRef: "refs/pull/13/head",
 				}, nil),
-				pushDefault: stubPushDefault("simple", nil),
+				pushDefault:       stubPushDefault("simple", nil),
+				remotePushDefault: stubRemotePushDefault("", nil),
 			},
 			httpStub: func(r *httpmock.Registry) {
 				r.Register(
@@ -578,6 +592,7 @@ func TestFind(t *testing.T) {
 				branchFn:          tt.args.branchFn,
 				branchConfig:      tt.args.branchConfig,
 				pushDefault:       tt.args.pushDefault,
+				remotePushDefault: tt.args.remotePushDefault,
 				parsePushRevision: tt.args.parsePushRevision,
 				remotesFn: stubRemotes(context.Remotes{
 					&remoteOrigin,
@@ -653,6 +668,7 @@ func Test_parsePRRefs(t *testing.T) {
 		branchConfig       git.BranchConfig
 		pushDefault        string
 		parsedPushRevision string
+		remotePushDefault  string
 		currentBranchName  string
 		baseRefRepo        ghrepo.Interface
 		rems               context.Remotes
@@ -819,10 +835,63 @@ func Test_parsePRRefs(t *testing.T) {
 			},
 			wantErr: nil,
 		},
+		{
+			name:              "When remote.pushDefault is set, it returns the correct PRRefs",
+			branchConfig:      git.BranchConfig{},
+			remotePushDefault: remoteUpstream.Remote.Name,
+			currentBranchName: "blueberries",
+			baseRefRepo:       remoteOrigin.Repo,
+			rems: context.Remotes{
+				&remoteOrigin,
+				&remoteUpstream,
+			},
+			wantPRRefs: PRRefs{
+				BranchName: "blueberries",
+				HeadRepo:   remoteUpstream.Repo,
+				BaseRepo:   remoteOrigin.Repo,
+			},
+			wantErr: nil,
+		},
+		{
+			name: "When the remote name is set on the branch, it returns the correct PRRefs",
+			branchConfig: git.BranchConfig{
+				RemoteName: remoteUpstream.Remote.Name,
+			},
+			currentBranchName: "blueberries",
+			baseRefRepo:       remoteOrigin.Repo,
+			rems: context.Remotes{
+				&remoteOrigin,
+				&remoteUpstream,
+			},
+			wantPRRefs: PRRefs{
+				BranchName: "blueberries",
+				HeadRepo:   remoteUpstream.Repo,
+				BaseRepo:   remoteOrigin.Repo,
+			},
+			wantErr: nil,
+		},
+		{
+			name: "When the remote URL is set on the branch, it returns the correct PRRefs",
+			branchConfig: git.BranchConfig{
+				RemoteURL: remoteUpstream.Remote.FetchURL,
+			},
+			currentBranchName: "blueberries",
+			baseRefRepo:       remoteOrigin.Repo,
+			rems: context.Remotes{
+				&remoteOrigin,
+				&remoteUpstream,
+			},
+			wantPRRefs: PRRefs{
+				BranchName: "blueberries",
+				HeadRepo:   remoteUpstream.Repo,
+				BaseRepo:   remoteOrigin.Repo,
+			},
+			wantErr: nil,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			prRefs, err := parsePRRefs(tt.currentBranchName, tt.branchConfig, tt.parsedPushRevision, tt.pushDefault, tt.baseRefRepo, tt.rems)
+			prRefs, err := parsePRRefs(tt.currentBranchName, tt.branchConfig, tt.parsedPushRevision, tt.pushDefault, tt.remotePushDefault, tt.baseRefRepo, tt.rems)
 			if tt.wantErr != nil {
 				require.Equal(t, tt.wantErr, err)
 			} else {
@@ -888,6 +957,12 @@ func stubBaseRepoFn(baseRepo ghrepo.Interface, err error) func() (ghrepo.Interfa
 func stubPushDefault(pushDefault string, err error) func() (string, error) {
 	return func() (string, error) {
 		return pushDefault, err
+	}
+}
+
+func stubRemotePushDefault(remotePushDefault string, err error) func() (string, error) {
+	return func() (string, error) {
+		return remotePushDefault, err
 	}
 }
 

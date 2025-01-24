@@ -38,6 +38,7 @@ type finder struct {
 	remotesFn         func() (remotes.Remotes, error)
 	httpClient        func() (*http.Client, error)
 	pushDefault       func() (string, error)
+	remotePushDefault func() (string, error)
 	parsePushRevision func(string) (string, error)
 	branchConfig      func(string) (git.BranchConfig, error)
 	progress          progressIndicator
@@ -61,6 +62,9 @@ func NewFinder(factory *cmdutil.Factory) PRFinder {
 		httpClient: factory.HttpClient,
 		pushDefault: func() (string, error) {
 			return factory.GitClient.PushDefault(context.Background())
+		},
+		remotePushDefault: func() (string, error) {
+			return factory.GitClient.RemotePushDefault(context.Background())
 		},
 		parsePushRevision: func(branch string) (string, error) {
 			return factory.GitClient.ParsePushRevision(context.Background(), branch)
@@ -217,10 +221,15 @@ func (f *finder) Find(opts FindOptions) (*api.PullRequest, ghrepo.Interface, err
 			return nil, nil, err
 		}
 
-		// Suppressing the error as we have other means of computing the PRRefs if this fails.
+		// Suppressing these errors as we have other means of computing the PRRefs when these fail.
 		parsedPushRevision, _ := f.parsePushRevision(f.branchName)
 
-		prRefs, err := parsePRRefs(f.branchName, branchConfig, parsedPushRevision, pushDefault, f.baseRefRepo, rems)
+		remotePushDefault, err := f.remotePushDefault()
+		if err != nil {
+			return nil, nil, err
+		}
+
+		prRefs, err := parsePRRefs(f.branchName, branchConfig, parsedPushRevision, pushDefault, remotePushDefault, f.baseRefRepo, rems)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -287,7 +296,7 @@ func (f *finder) parseURL(prURL string) (ghrepo.Interface, int, error) {
 	return repo, prNumber, nil
 }
 
-func parsePRRefs(currentBranchName string, branchConfig git.BranchConfig, parsedPushRevision string, pushDefault string, baseRefRepo ghrepo.Interface, rems remotes.Remotes) (PRRefs, error) {
+func parsePRRefs(currentBranchName string, branchConfig git.BranchConfig, parsedPushRevision string, pushDefault string, remotePushDefault string, baseRefRepo ghrepo.Interface, rems remotes.Remotes) (PRRefs, error) {
 	prRefs := PRRefs{
 		BaseRepo: baseRefRepo,
 	}
@@ -311,8 +320,15 @@ func parsePRRefs(currentBranchName string, branchConfig git.BranchConfig, parsed
 		return PRRefs{}, fmt.Errorf("no remote for %q found in %q", parsedPushRevision, strings.Join(remoteNames, ", "))
 	}
 
-	// To get the HeadRepo, we look to the git config. The PushRemote{Name | URL} comes from
-	// one of the following, in order of precedence:
+	// We assume the PR's branch name is the same as whatever f.BranchFn() returned earlier
+	// unless the user has specified push.default = upstream or tracking, then we use the
+	// branch name from the merge ref.
+	prRefs.BranchName = currentBranchName
+	if pushDefault == "upstream" || pushDefault == "tracking" {
+		prRefs.BranchName = strings.TrimPrefix(branchConfig.MergeRef, "refs/heads/")
+	}
+
+	// To get the HeadRepo, we look to the git config. The HeadRepo comes from one of the following, in order of precedence:
 	// 1. branch.<name>.pushRemote
 	// 2. remote.pushDefault
 	// 3. branch.<name>.remote
@@ -324,14 +340,18 @@ func parsePRRefs(currentBranchName string, branchConfig git.BranchConfig, parsed
 		if r, err := ghrepo.FromURL(branchConfig.PushRemoteURL); err == nil {
 			prRefs.HeadRepo = r
 		}
-	}
-
-	// We assume the PR's branch name is the same as whatever f.BranchFn() returned earlier.
-	// unless the user has specified push.default = upstream or tracking, then we use the
-	// branch name from the merge ref.
-	prRefs.BranchName = currentBranchName
-	if pushDefault == "upstream" || pushDefault == "tracking" {
-		prRefs.BranchName = strings.TrimPrefix(branchConfig.MergeRef, "refs/heads/")
+	} else if remotePushDefault != "" {
+		if r, err := rems.FindByName(remotePushDefault); err == nil {
+			prRefs.HeadRepo = r.Repo
+		}
+	} else if branchConfig.RemoteName != "" {
+		if r, err := rems.FindByName(branchConfig.RemoteName); err == nil {
+			prRefs.HeadRepo = r.Repo
+		}
+	} else if branchConfig.RemoteURL != nil {
+		if r, err := ghrepo.FromURL(branchConfig.RemoteURL); err == nil {
+			prRefs.HeadRepo = r
+		}
 	}
 
 	// The PR merges from a branch in the same repo as the base branch (usually the default branch)
