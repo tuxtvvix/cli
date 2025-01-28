@@ -35,12 +35,8 @@ func NewCmdView(f *cmdutil.Factory, runF func(*viewOptions) error) *cobra.Comman
 	cmd := &cobra.Command{
 		Use:   "view <id>",
 		Short: "View an autolink reference",
-		Long: heredoc.Docf(`
-			View an autolink reference for a repository.
-
-			Information about autolinks is only available to repository administrators.
-		`),
-		Args: cobra.ExactArgs(1),
+		Long:  "View an autolink reference for a repository.",
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.BaseRepo = f.BaseRepo
 			httpClient, err := f.HttpClient()
