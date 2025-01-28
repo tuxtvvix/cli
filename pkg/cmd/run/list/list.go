@@ -131,6 +131,7 @@ func listRun(opts *ListOptions) error {
 			filters.WorkflowID = workflow.ID
 			filters.WorkflowName = workflow.Name
 		} else {
+			opts.IO.StopProgressIndicator()
 			return err
 		}
 	}
