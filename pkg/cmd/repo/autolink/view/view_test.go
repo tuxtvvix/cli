@@ -161,6 +161,16 @@ func TestViewRun(t *testing.T) {
 			},
 			wantStdout: "{\"id\":1}\n",
 		},
+		{
+			name: "client error",
+			opts: &viewOptions{},
+			stubViewer: stubAutoLinkViewer{
+				autolink: nil,
+				err:      testAutolinkClientViewError{},
+			},
+			expectedErr: testAutolinkClientViewError{},
+			wantStderr:  "",
+		},
 	}
 
 	for _, tt := range tests {
