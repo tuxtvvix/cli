@@ -39,7 +39,6 @@ func (a *AutolinkViewer) View(repo ghrepo.Interface, id string) (*shared.Autolin
 	err = json.NewDecoder(resp.Body).Decode(&autolink)
 
 	if err != nil {
-		fmt.Println(err.Error())
 		return nil, err
 	}
 
