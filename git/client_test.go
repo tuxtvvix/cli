@@ -14,6 +14,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/MakeNowJust/heredoc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -763,7 +764,12 @@ func TestClientReadBranchConfig(t *testing.T) {
 			name: "when the config is read, it should return the correct BranchConfig",
 			cmds: mockedCommands{
 				`path/to/git config --get-regexp ^branch\.trunk\.(remote|merge|pushremote|gh-merge-base)$`: {
-					Stdout: "branch.trunk.remote upstream\nbranch.trunk.merge refs/heads/trunk\nbranch.trunk.pushremote origin\nbranch.trunk.gh-merge-base gh-merge-base\n",
+					Stdout: heredoc.Doc(`
+						branch.trunk.remote upstream
+						branch.trunk.merge refs/heads/trunk
+						branch.trunk.pushremote origin
+						branch.trunk.gh-merge-base gh-merge-base
+						`),
 				},
 			},
 			branch: "trunk",
@@ -1869,16 +1875,16 @@ func TestCommandMocking(t *testing.T) {
 	jsonVar, ok := os.LookupEnv("GH_HELPER_PROCESS_RICH_COMMANDS")
 	if !ok {
 		fmt.Fprint(os.Stderr, "missing GH_HELPER_PROCESS_RICH_COMMANDS")
-		// Exit 1 is reserved for empty command responses by git. This can be desirable in some cases,
-		// so returning an arbitrary exit code to avoid suppressing this if an exit code 1 is allowed.
+		// Exit 1 is used for empty key values in the git config. This is non-breaking in those use cases,
+		// so this is returning a non-zero exit code to avoid suppressing this error for those use cases.
 		os.Exit(16)
 	}
 
 	var commands mockedCommands
 	if err := json.Unmarshal([]byte(jsonVar), &commands); err != nil {
 		fmt.Fprint(os.Stderr, "failed to unmarshal GH_HELPER_PROCESS_RICH_COMMANDS")
-		// Exit 1 is reserved for empty command responses by git. This can be desirable in some cases,
-		// so returning an arbitrary exit code to avoid suppressing this if an exit code 1 is allowed.
+		// Exit 1 is used for empty key values in the git config. This is non-breaking in those use cases,
+		// so this is returning a non-zero exit code to avoid suppressing this error for those use cases.
 		os.Exit(16)
 	}
 
@@ -1888,8 +1894,8 @@ func TestCommandMocking(t *testing.T) {
 	commandResult, ok := commands[args(strings.Join(realArgs, " "))]
 	if !ok {
 		fmt.Fprintf(os.Stderr, "unexpected command: %s\n", strings.Join(realArgs, " "))
-		// Exit 1 is reserved for empty command responses by git. This can be desirable in some cases,
-		// so returning an arbitrary exit code to avoid suppressing this if an exit code 1 is allowed.
+		// Exit 1 is used for empty key values in the git config. This is non-breaking in those use cases,
+		// so this is returning a non-zero exit code to avoid suppressing this error for those use cases.
 		os.Exit(16)
 	}
 

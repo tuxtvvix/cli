@@ -389,13 +389,11 @@ func (c *Client) ReadBranchConfig(ctx context.Context, branch string) (BranchCon
 		return BranchConfig{}, err
 	}
 
-	// This is the error we expect if a git command does not run successfully.
-	// If the ExitCode is 1, then we just didn't find any config for the branch.
-	// We will use this error to check against the commands that are allowed to
-	// return an empty result.
-	var gitError *GitError
 	branchCfgOut, err := cmd.Output()
 	if err != nil {
+		// This is the error we expect if the git command does not run successfully.
+		// If the ExitCode is 1, then we just didn't find any config for the branch.
+		var gitError *GitError
 		if ok := errors.As(err, &gitError); ok && gitError.ExitCode != 1 {
 			return BranchConfig{}, err
 		}
@@ -417,14 +415,9 @@ func parseBranchConfig(branchConfigLines []string) BranchConfig {
 		keys := strings.Split(parts[0], ".")
 		switch keys[len(keys)-1] {
 		case "remote":
-			remoteURL, remoteName := parseRemoteURLOrName(parts[1])
-			cfg.RemoteURL = remoteURL
-			cfg.RemoteName = remoteName
-		// pushremote usually indicates a "triangular" workflow
+			cfg.RemoteURL, cfg.RemoteName = parseRemoteURLOrName(parts[1])
 		case "pushremote":
-			pushRemoteURL, pushRemoteName := parseRemoteURLOrName(parts[1])
-			cfg.PushRemoteURL = pushRemoteURL
-			cfg.PushRemoteName = pushRemoteName
+			cfg.PushRemoteURL, cfg.PushRemoteName = parseRemoteURLOrName(parts[1])
 		case "merge":
 			cfg.MergeRef = parts[1]
 		case MergeBaseConfig:
@@ -449,7 +442,8 @@ func (c *Client) SetBranchConfig(ctx context.Context, branch, name, value string
 }
 
 // PushDefault returns the value of push.default in the config. If the value
-// is not set, it returns "simple" (the default value).
+// is not set, it returns "simple" (the default git value). See
+// https://git-scm.com/docs/git-config#Documentation/git-config.txt-pushdefault
 func (c *Client) PushDefault(ctx context.Context) (string, error) {
 	pushDefault, err := c.Config(ctx, "push.default")
 	if err == nil {

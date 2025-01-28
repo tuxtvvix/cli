@@ -419,7 +419,11 @@ func TestFind(t *testing.T) {
 			wantRepo: "https://github.com/ORIGINOWNER/REPO",
 		},
 		{
-			name: "the current branch is configured to push to and pull from a URL (upstream, in this example) that is different from what the repo is configured to push to and pull from (origin, in this example) and push.default = upstream, it finds the PR associated with the upstream repo and returns origin as the base repo",
+			// The current BRANCH is configured to push to and pull from a URL (upstream, in this example)
+			// which is different from what the REPO is configured to push to and pull from (origin, in this example)
+			// and push.default = upstream. It should find the PR associated with the upstream repo and return
+			// origin as the base repo
+			name: "when push.default = upstream and the current branch is configured to push/pull from a different remote than the repo",
 			args: args{
 				selector:   "",
 				fields:     []string{"id", "number"},
@@ -902,7 +906,7 @@ func TestParsePRRefs(t *testing.T) {
 	}
 }
 
-func TestPRRefs_GetPRLabel(t *testing.T) {
+func TestPRRefs_GetPRHeadLabel(t *testing.T) {
 	originRepo := ghrepo.New("ORIGINOWNER", "REPO")
 	upstreamRepo := ghrepo.New("UPSTREAMOWNER", "REPO")
 	tests := []struct {
@@ -931,7 +935,7 @@ func TestPRRefs_GetPRLabel(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, tt.prRefs.GetPRLabel())
+			assert.Equal(t, tt.want, tt.prRefs.GetPRHeadLabel())
 		})
 	}
 }

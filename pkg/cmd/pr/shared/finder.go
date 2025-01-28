@@ -109,10 +109,10 @@ type PRRefs struct {
 	BaseRepo   ghrepo.Interface
 }
 
-// GetPRLabel returns the string that the GitHub API uses to identify the PR. This is
+// GetPRHeadLabel returns the string that the GitHub API uses to identify the PR. This is
 // either just the branch name or, if the PR is originating from a fork, the fork owner
 // and the branch name, like <owner>:<branch>.
-func (s *PRRefs) GetPRLabel() string {
+func (s *PRRefs) GetPRHeadLabel() string {
 	if ghrepo.IsSame(s.HeadRepo, s.BaseRepo) {
 		return s.BranchName
 	}
@@ -240,7 +240,7 @@ func (f *finder) Find(opts FindOptions) (*api.PullRequest, ghrepo.Interface, err
 			return nil, nil, err
 		}
 
-		pr, err = findForBranch(httpClient, f.baseRefRepo, opts.BaseBranch, prRefs.GetPRLabel(), opts.States, fields.ToSlice())
+		pr, err = findForBranch(httpClient, f.baseRefRepo, opts.BaseBranch, prRefs.GetPRHeadLabel(), opts.States, fields.ToSlice())
 		if err != nil {
 			return pr, f.baseRefRepo, err
 		}
