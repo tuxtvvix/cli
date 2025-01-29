@@ -173,7 +173,7 @@ func TestViewRun(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ios, _, stdout, stderr := iostreams.Test()
+			ios, _, stdout, _ := iostreams.Test()
 
 			opts := tt.opts
 			opts.IO = ios
@@ -187,7 +187,7 @@ func TestViewRun(t *testing.T) {
 
 			if tt.expectedErr != nil {
 				require.Error(t, err)
-				require.ErrorIs(t, err, tt.expectedErr)
+				assert.ErrorIs(t, err, tt.expectedErr)
 			} else {
 				require.NoError(t, err)
 				assert.Equal(t, tt.wantStdout, stdout.String())
