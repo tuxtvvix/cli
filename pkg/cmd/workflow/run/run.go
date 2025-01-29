@@ -262,11 +262,15 @@ func runRun(opts *RunOptions) error {
 
 	ref := opts.Ref
 
-	if ref == "" {
-		ref, err = api.RepoDefaultBranch(client, repo)
-		if err != nil {
-			return fmt.Errorf("unable to determine default branch for %s: %w", ghrepo.FullName(repo), err)
-		}
+	defaultBranch, err := api.RepoDefaultBranch(client, repo)
+	if err != nil {
+		return fmt.Errorf("unable to determine default branch for %s: %w", ghrepo.FullName(repo), err)
+	}
+
+	if ref != "" && ref != defaultBranch {
+		return fmt.Errorf("ref %s is not the default branch, and workflows must be on the default branch to be triggered by workflow_dispatch", ref)
+	} else {
+		ref = defaultBranch
 	}
 
 	states := []shared.WorkflowState{shared.Active}
