@@ -107,7 +107,7 @@ func statusRun(opts *StatusOptions) error {
 			if err != nil {
 				return err
 			}
-			// Suppressing these errors as we have other means of computing the PRRefs when these fail.
+			// Suppressing these errors as we have other means of computing the PullRequestRefs when these fail.
 			parsedPushRevision, _ := opts.GitClient.ParsePushRevision(ctx, currentBranchName)
 
 			remotePushDefault, err := opts.GitClient.RemotePushDefault(ctx)

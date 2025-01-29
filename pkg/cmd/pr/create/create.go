@@ -518,7 +518,7 @@ func initDefaultTitleBody(ctx CreateContext, state *shared.IssueMetadataState, u
 	return nil
 }
 
-// TODO: Replace with the finder's PRRefs struct
+// TODO: Replace with the finder's PullRequestRefs struct
 // trackingRef represents a ref for a remote tracking branch.
 type trackingRef struct {
 	remoteName string

@@ -769,7 +769,7 @@ func TestClientReadBranchConfig(t *testing.T) {
 						branch.trunk.merge refs/heads/trunk
 						branch.trunk.pushremote origin
 						branch.trunk.gh-merge-base gh-merge-base
-						`),
+					`),
 				},
 			},
 			branch: "trunk",

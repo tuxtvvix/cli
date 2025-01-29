@@ -474,7 +474,7 @@ func (c *Client) RemotePushDefault(ctx context.Context) (string, error) {
 }
 
 // ParsePushRevision gets the value of the @{push} revision syntax
-// An error here doesn't necessarily mean something are broke, but may mean that the @{push}
+// An error here doesn't necessarily mean something is broken, but may mean that the @{push}
 // revision syntax couldn't be resolved, such as in non-centralized workflows with
 // push.default = simple. Downstream consumers should consider how to handle this error.
 func (c *Client) ParsePushRevision(ctx context.Context, branch string) (string, error) {

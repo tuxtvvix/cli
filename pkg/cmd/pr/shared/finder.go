@@ -103,7 +103,7 @@ type FindOptions struct {
 //
 // A ref is described as "remoteName/branchName", so
 // baseRepoName/baseBranchName -----PR-----> headRepoName/headBranchName
-type PRRefs struct {
+type PullRequestRefs struct {
 	BranchName string
 	HeadRepo   ghrepo.Interface
 	BaseRepo   ghrepo.Interface
@@ -112,7 +112,7 @@ type PRRefs struct {
 // GetPRHeadLabel returns the string that the GitHub API uses to identify the PR. This is
 // either just the branch name or, if the PR is originating from a fork, the fork owner
 // and the branch name, like <owner>:<branch>.
-func (s *PRRefs) GetPRHeadLabel() string {
+func (s *PullRequestRefs) GetPRHeadLabel() string {
 	if ghrepo.IsSame(s.HeadRepo, s.BaseRepo) {
 		return s.BranchName
 	}
@@ -227,7 +227,7 @@ func (f *finder) Find(opts FindOptions) (*api.PullRequest, ghrepo.Interface, err
 			return nil, nil, err
 		}
 
-		// Suppressing these errors as we have other means of computing the PRRefs when these fail.
+		// Suppressing these errors as we have other means of computing the PullRequestRefs when these fail.
 		parsedPushRevision, _ := f.parsePushRevision(f.branchName)
 
 		remotePushDefault, err := f.remotePushDefault()
@@ -302,8 +302,8 @@ func (f *finder) parseURL(prURL string) (ghrepo.Interface, int, error) {
 	return repo, prNumber, nil
 }
 
-func ParsePRRefs(currentBranchName string, branchConfig git.BranchConfig, parsedPushRevision string, pushDefault string, remotePushDefault string, baseRefRepo ghrepo.Interface, rems remotes.Remotes) (PRRefs, error) {
-	prRefs := PRRefs{
+func ParsePRRefs(currentBranchName string, branchConfig git.BranchConfig, parsedPushRevision string, pushDefault string, remotePushDefault string, baseRefRepo ghrepo.Interface, rems remotes.Remotes) (PullRequestRefs, error) {
+	prRefs := PullRequestRefs{
 		BaseRepo: baseRefRepo,
 	}
 
@@ -323,7 +323,7 @@ func ParsePRRefs(currentBranchName string, branchConfig git.BranchConfig, parsed
 		for i, r := range rems {
 			remoteNames[i] = r.Name
 		}
-		return PRRefs{}, fmt.Errorf("no remote for %q found in %q", parsedPushRevision, strings.Join(remoteNames, ", "))
+		return PullRequestRefs{}, fmt.Errorf("no remote for %q found in %q", parsedPushRevision, strings.Join(remoteNames, ", "))
 	}
 
 	// We assume the PR's branch name is the same as whatever f.BranchFn() returned earlier

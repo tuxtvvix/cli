@@ -676,15 +676,15 @@ func TestParsePRRefs(t *testing.T) {
 		currentBranchName  string
 		baseRefRepo        ghrepo.Interface
 		rems               context.Remotes
-		wantPRRefs         PRRefs
+		wantPRRefs         PullRequestRefs
 		wantErr            error
 	}{
 		{
-			name:              "When the branch is called 'blueberries' with an empty branch config, it returns the correct PRRefs",
+			name:              "When the branch is called 'blueberries' with an empty branch config, it returns the correct PullRequestRefs",
 			branchConfig:      git.BranchConfig{},
 			currentBranchName: "blueberries",
 			baseRefRepo:       remoteOrigin.Repo,
-			wantPRRefs: PRRefs{
+			wantPRRefs: PullRequestRefs{
 				BranchName: "blueberries",
 				HeadRepo:   remoteOrigin.Repo,
 				BaseRepo:   remoteOrigin.Repo,
@@ -692,11 +692,11 @@ func TestParsePRRefs(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name:              "When the branch is called 'otherBranch' with an empty branch config, it returns the correct PRRefs",
+			name:              "When the branch is called 'otherBranch' with an empty branch config, it returns the correct PullRequestRefs",
 			branchConfig:      git.BranchConfig{},
 			currentBranchName: "otherBranch",
 			baseRefRepo:       remoteOrigin.Repo,
-			wantPRRefs: PRRefs{
+			wantPRRefs: PullRequestRefs{
 				BranchName: "otherBranch",
 				HeadRepo:   remoteOrigin.Repo,
 				BaseRepo:   remoteOrigin.Repo,
@@ -711,7 +711,7 @@ func TestParsePRRefs(t *testing.T) {
 			rems: context.Remotes{
 				&remoteOrigin,
 			},
-			wantPRRefs: PRRefs{
+			wantPRRefs: PullRequestRefs{
 				BranchName: "pushBranch",
 				HeadRepo:   remoteOrigin.Repo,
 				BaseRepo:   remoteOrigin.Repo,
@@ -727,7 +727,7 @@ func TestParsePRRefs(t *testing.T) {
 				&remoteUpstream,
 				&remoteOther,
 			},
-			wantPRRefs: PRRefs{},
+			wantPRRefs: PullRequestRefs{},
 			wantErr:    fmt.Errorf("no remote for %q found in %q", "origin/differentPushBranch", "upstream, other"),
 		},
 		{
@@ -738,7 +738,7 @@ func TestParsePRRefs(t *testing.T) {
 			rems: context.Remotes{
 				&remoteOther,
 			},
-			wantPRRefs: PRRefs{
+			wantPRRefs: PullRequestRefs{
 				BranchName: "pushBranch",
 				HeadRepo:   remoteOther.Repo,
 				BaseRepo:   remoteOrigin.Repo,
@@ -746,7 +746,7 @@ func TestParsePRRefs(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name: "When the push remote is the same as the baseRepo, it returns the baseRepo as the PRRefs HeadRepo",
+			name: "When the push remote is the same as the baseRepo, it returns the baseRepo as the PullRequestRefs HeadRepo",
 			branchConfig: git.BranchConfig{
 				PushRemoteName: remoteOrigin.Remote.Name,
 			},
@@ -756,7 +756,7 @@ func TestParsePRRefs(t *testing.T) {
 				&remoteOrigin,
 				&remoteUpstream,
 			},
-			wantPRRefs: PRRefs{
+			wantPRRefs: PullRequestRefs{
 				BranchName: "blueberries",
 				HeadRepo:   remoteOrigin.Repo,
 				BaseRepo:   remoteOrigin.Repo,
@@ -764,7 +764,7 @@ func TestParsePRRefs(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name: "When the push remote is different from the baseRepo, it returns the push remote repo as the PRRefs HeadRepo",
+			name: "When the push remote is different from the baseRepo, it returns the push remote repo as the PullRequestRefs HeadRepo",
 			branchConfig: git.BranchConfig{
 				PushRemoteName: remoteOrigin.Remote.Name,
 			},
@@ -774,7 +774,7 @@ func TestParsePRRefs(t *testing.T) {
 				&remoteOrigin,
 				&remoteUpstream,
 			},
-			wantPRRefs: PRRefs{
+			wantPRRefs: PullRequestRefs{
 				BranchName: "blueberries",
 				HeadRepo:   remoteOrigin.Repo,
 				BaseRepo:   remoteUpstream.Repo,
@@ -782,7 +782,7 @@ func TestParsePRRefs(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name: "When the push remote defined by a URL and the baseRepo is different from the push remote, it returns the push remote repo as the PRRefs HeadRepo",
+			name: "When the push remote defined by a URL and the baseRepo is different from the push remote, it returns the push remote repo as the PullRequestRefs HeadRepo",
 			branchConfig: git.BranchConfig{
 				PushRemoteURL: remoteOrigin.Remote.FetchURL,
 			},
@@ -792,7 +792,7 @@ func TestParsePRRefs(t *testing.T) {
 				&remoteOrigin,
 				&remoteUpstream,
 			},
-			wantPRRefs: PRRefs{
+			wantPRRefs: PullRequestRefs{
 				BranchName: "blueberries",
 				HeadRepo:   remoteOrigin.Repo,
 				BaseRepo:   remoteUpstream.Repo,
@@ -812,7 +812,7 @@ func TestParsePRRefs(t *testing.T) {
 				&remoteOrigin,
 				&remoteUpstream,
 			},
-			wantPRRefs: PRRefs{
+			wantPRRefs: PullRequestRefs{
 				BranchName: "blue-upstream-berries",
 				HeadRepo:   remoteUpstream.Repo,
 				BaseRepo:   remoteOrigin.Repo,
@@ -832,7 +832,7 @@ func TestParsePRRefs(t *testing.T) {
 				&remoteOrigin,
 				&remoteUpstream,
 			},
-			wantPRRefs: PRRefs{
+			wantPRRefs: PullRequestRefs{
 				BranchName: "blue-upstream-berries",
 				HeadRepo:   remoteUpstream.Repo,
 				BaseRepo:   remoteOrigin.Repo,
@@ -840,7 +840,7 @@ func TestParsePRRefs(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name:              "When remote.pushDefault is set, it returns the correct PRRefs",
+			name:              "When remote.pushDefault is set, it returns the correct PullRequestRefs",
 			branchConfig:      git.BranchConfig{},
 			remotePushDefault: remoteUpstream.Remote.Name,
 			currentBranchName: "blueberries",
@@ -849,7 +849,7 @@ func TestParsePRRefs(t *testing.T) {
 				&remoteOrigin,
 				&remoteUpstream,
 			},
-			wantPRRefs: PRRefs{
+			wantPRRefs: PullRequestRefs{
 				BranchName: "blueberries",
 				HeadRepo:   remoteUpstream.Repo,
 				BaseRepo:   remoteOrigin.Repo,
@@ -857,7 +857,7 @@ func TestParsePRRefs(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name: "When the remote name is set on the branch, it returns the correct PRRefs",
+			name: "When the remote name is set on the branch, it returns the correct PullRequestRefs",
 			branchConfig: git.BranchConfig{
 				RemoteName: remoteUpstream.Remote.Name,
 			},
@@ -867,7 +867,7 @@ func TestParsePRRefs(t *testing.T) {
 				&remoteOrigin,
 				&remoteUpstream,
 			},
-			wantPRRefs: PRRefs{
+			wantPRRefs: PullRequestRefs{
 				BranchName: "blueberries",
 				HeadRepo:   remoteUpstream.Repo,
 				BaseRepo:   remoteOrigin.Repo,
@@ -875,7 +875,7 @@ func TestParsePRRefs(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name: "When the remote URL is set on the branch, it returns the correct PRRefs",
+			name: "When the remote URL is set on the branch, it returns the correct PullRequestRefs",
 			branchConfig: git.BranchConfig{
 				RemoteURL: remoteUpstream.Remote.FetchURL,
 			},
@@ -885,7 +885,7 @@ func TestParsePRRefs(t *testing.T) {
 				&remoteOrigin,
 				&remoteUpstream,
 			},
-			wantPRRefs: PRRefs{
+			wantPRRefs: PullRequestRefs{
 				BranchName: "blueberries",
 				HeadRepo:   remoteUpstream.Repo,
 				BaseRepo:   remoteOrigin.Repo,
@@ -911,12 +911,12 @@ func TestPRRefs_GetPRHeadLabel(t *testing.T) {
 	upstreamRepo := ghrepo.New("UPSTREAMOWNER", "REPO")
 	tests := []struct {
 		name   string
-		prRefs PRRefs
+		prRefs PullRequestRefs
 		want   string
 	}{
 		{
 			name: "When the HeadRepo and BaseRepo match, it returns the branch name",
-			prRefs: PRRefs{
+			prRefs: PullRequestRefs{
 				BranchName: "blueberries",
 				HeadRepo:   originRepo,
 				BaseRepo:   originRepo,
@@ -925,7 +925,7 @@ func TestPRRefs_GetPRHeadLabel(t *testing.T) {
 		},
 		{
 			name: "When the HeadRepo and BaseRepo do not match, it returns the prepended HeadRepo owner to the branch name",
-			prRefs: PRRefs{
+			prRefs: PullRequestRefs{
 				BranchName: "blueberries",
 				HeadRepo:   originRepo,
 				BaseRepo:   upstreamRepo,
