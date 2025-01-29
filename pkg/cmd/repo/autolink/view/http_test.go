@@ -14,12 +14,6 @@ import (
 
 func TestAutolinkViewer_View(t *testing.T) {
 	repo := ghrepo.New("OWNER", "REPO")
-	testAutolink := shared.Autolink{
-		ID:             123,
-		KeyPrefix:      "TICKET-",
-		URLTemplate:    "https://example.com/TICKET?query=<num>",
-		IsAlphanumeric: true,
-	}
 
 	tests := []struct {
 		name         string
@@ -32,7 +26,7 @@ func TestAutolinkViewer_View(t *testing.T) {
 		expectedErrMsg   string
 	}{
 		{
-			name:       "200 successful view",
+			name:       "200 successful alphanumeric view",
 			id:         "123",
 			stubStatus: 200,
 			stubRespJSON: `{
@@ -41,7 +35,29 @@ func TestAutolinkViewer_View(t *testing.T) {
 				"url_template": "https://example.com/TICKET?query=<num>",
 				"is_alphanumeric": true
 			}`,
-			expectedAutolink: &testAutolink,
+			expectedAutolink: &shared.Autolink{
+				ID:             123,
+				KeyPrefix:      "TICKET-",
+				URLTemplate:    "https://example.com/TICKET?query=<num>",
+				IsAlphanumeric: true,
+			},
+		},
+		{
+			name:       "200 successful numeric view",
+			id:         "124",
+			stubStatus: 200,
+			stubRespJSON: `{
+				"id": 124,
+				"key_prefix": "TICKET-",
+				"url_template": "https://example.com/TICKET?query=<num>",
+				"is_alphanumeric": false
+			}`,
+			expectedAutolink: &shared.Autolink{
+				ID:             124,
+				KeyPrefix:      "TICKET-",
+				URLTemplate:    "https://example.com/TICKET?query=<num>",
+				IsAlphanumeric: false,
+			},
 		},
 		{
 			name:       "404 repo or autolink not found",
