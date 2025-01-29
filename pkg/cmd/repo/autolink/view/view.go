@@ -38,19 +38,13 @@ func NewCmdView(f *cmdutil.Factory, runF func(*viewOptions) error) *cobra.Comman
 		Long:  "View an autolink reference for a repository.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			opts.BaseRepo = f.BaseRepo
 			httpClient, err := f.HttpClient()
-
 			if err != nil {
 				return err
 			}
 
+			opts.BaseRepo = f.BaseRepo
 			opts.ID = args[0]
-
-			if err != nil {
-				return err
-			}
-
 			opts.AutolinkClient = &AutolinkViewer{HTTPClient: httpClient}
 
 			if runF != nil {
