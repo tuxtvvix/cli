@@ -44,16 +44,16 @@ func TestAutolinkViewer_View(t *testing.T) {
 		},
 		{
 			name:       "200 successful numeric view",
-			id:         "124",
+			id:         "123",
 			stubStatus: 200,
 			stubRespJSON: `{
-				"id": 124,
+				"id": 123,
 				"key_prefix": "TICKET-",
 				"url_template": "https://example.com/TICKET?query=<num>",
 				"is_alphanumeric": false
 			}`,
 			expectedAutolink: &shared.Autolink{
-				ID:             124,
+				ID:             123,
 				KeyPrefix:      "TICKET-",
 				URLTemplate:    "https://example.com/TICKET?query=<num>",
 				IsAlphanumeric: false,
