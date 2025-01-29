@@ -3,7 +3,6 @@ package view
 import (
 	"fmt"
 
-	"github.com/MakeNowJust/heredoc"
 	"github.com/cli/cli/v2/internal/browser"
 	"github.com/cli/cli/v2/internal/ghrepo"
 	"github.com/cli/cli/v2/pkg/cmd/repo/autolink/shared"
@@ -65,6 +64,8 @@ func viewRun(opts *viewOptions) error {
 	if err != nil {
 		return err
 	}
+
+	out := opts.IO.Out
 	cs := opts.IO.ColorScheme()
 
 	autolink, err := opts.AutolinkClient.View(repo, opts.ID)
@@ -77,21 +78,19 @@ func viewRun(opts *viewOptions) error {
 		return opts.Exporter.Write(opts.IO, autolink)
 	}
 
-	msg := heredoc.Docf(`
-			Autolink in %s
+	fmt.Fprintf(out, "Autolink in %s\n\n", ghrepo.FullName(repo))
 
-			ID: %d
-			Key Prefix: %s
-			URL Template: %s
-			Alphanumeric: %t
-		`,
-		ghrepo.FullName(repo),
-		autolink.ID,
-		autolink.KeyPrefix,
-		autolink.URLTemplate,
-		autolink.IsAlphanumeric,
-	)
-	fmt.Fprint(opts.IO.Out, msg)
+	fmt.Fprint(out, cs.Bold("ID: "))
+	fmt.Fprintln(out, cs.Cyanf("%d", autolink.ID))
+
+	fmt.Fprint(out, cs.Bold("Key Prefix: "))
+	fmt.Fprintln(out, autolink.KeyPrefix)
+
+	fmt.Fprint(out, cs.Bold("URL Template: "))
+	fmt.Fprintln(out, autolink.URLTemplate)
+
+	fmt.Fprint(out, cs.Bold("Alphanumeric: "))
+	fmt.Fprintln(out, autolink.IsAlphanumeric)
 
 	return nil
 }

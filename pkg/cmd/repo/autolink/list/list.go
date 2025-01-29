@@ -104,8 +104,10 @@ func listRun(opts *listOptions) error {
 
 	tp := tableprinter.New(opts.IO, tableprinter.WithHeader("ID", "KEY PREFIX", "URL TEMPLATE", "ALPHANUMERIC"))
 
+	cs := opts.IO.ColorScheme()
+
 	for _, autolink := range autolinks {
-		tp.AddField(fmt.Sprintf("%d", autolink.ID))
+		tp.AddField(cs.Cyanf("%d", autolink.ID))
 		tp.AddField(autolink.KeyPrefix)
 		tp.AddField(autolink.URLTemplate)
 		tp.AddField(strconv.FormatBool(autolink.IsAlphanumeric))
