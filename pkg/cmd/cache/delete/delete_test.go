@@ -44,6 +44,21 @@ func TestNewCmdDelete(t *testing.T) {
 			wants: DeleteOptions{DeleteAll: true},
 		},
 		{
+			name:  "delete all and succeed-on-no-caches flags",
+			cli:   "--all --succeed-on-no-caches",
+			wants: DeleteOptions{DeleteAll: true, SucceedOnNoCaches: true},
+		},
+		{
+			name:     "succeed-on-no-caches flag",
+			cli:      "--succeed-on-no-caches",
+			wantsErr: "--succeed-on-no-caches must be used in conjunction with --all",
+		},
+		{
+			name:     "succeed-on-no-caches flag and id argument",
+			cli:      "--succeed-on-no-caches 123",
+			wantsErr: "--succeed-on-no-caches must be used in conjunction with --all",
+		},
+		{
 			name:     "id argument and delete all flag",
 			cli:      "1 --all",
 			wantsErr: "specify only one of cache id, cache key, or --all",
@@ -72,6 +87,7 @@ func TestNewCmdDelete(t *testing.T) {
 			}
 			assert.NoError(t, err)
 			assert.Equal(t, tt.wants.DeleteAll, gotOpts.DeleteAll)
+			assert.Equal(t, tt.wants.SucceedOnNoCaches, gotOpts.SucceedOnNoCaches)
 			assert.Equal(t, tt.wants.Identifier, gotOpts.Identifier)
 		})
 	}
