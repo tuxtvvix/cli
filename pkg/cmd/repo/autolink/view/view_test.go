@@ -118,7 +118,6 @@ func TestViewRun(t *testing.T) {
 		stubViewer  stubAutoLinkViewer
 		expectedErr error
 		wantStdout  string
-		wantStderr  string
 	}{
 		{
 			name: "view",
@@ -169,7 +168,6 @@ func TestViewRun(t *testing.T) {
 				err:      testAutolinkClientViewError{},
 			},
 			expectedErr: testAutolinkClientViewError{},
-			wantStderr:  "",
 		},
 	}
 
@@ -193,10 +191,6 @@ func TestViewRun(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 				assert.Equal(t, tt.wantStdout, stdout.String())
-			}
-
-			if tt.wantStderr != "" {
-				assert.Equal(t, tt.wantStderr, stderr.String())
 			}
 		})
 	}
