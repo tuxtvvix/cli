@@ -193,7 +193,7 @@ func (c *LiveClient) getBundle(url string) (*bundle.Bundle, error) {
 	err := backoff.Retry(func() error {
 		resp, err := c.httpClient.Get(url)
 		if err != nil {
-			return backoff.Permanent(err)
+			return fmt.Errorf("request to fetch bundle from URL failed: %w", err)
 		}
 
 		if resp.StatusCode >= 500 && resp.StatusCode <= 599 {
