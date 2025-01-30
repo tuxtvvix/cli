@@ -178,6 +178,7 @@ func (c *LiveClient) fetchBundleFromAttestations(attestations []*Attestation) ([
 
 			// If the bundle field is nil, try to fetch the bundle with the provided URL
 			if a.Bundle == nil {
+				c.logger.VerbosePrintf("Bundle field is empty. Trying to fetch with bundle URL\n\n")
 				b, err := c.GetBundle(a.BundleURL)
 				if err != nil {
 					return fmt.Errorf("failed to fetch bundle with URL: %w", err)
@@ -185,10 +186,11 @@ func (c *LiveClient) fetchBundleFromAttestations(attestations []*Attestation) ([
 				fetched[i] = &Attestation{
 					Bundle: b,
 				}
+				return nil
 			}
 
 			// otherwise fall back to the bundle field
-			c.logger.VerbosePrintf("Bundle URL is empty. Falling back to bundle field\n\n")
+			c.logger.VerbosePrintf("Fetching bundle from Bundle field\n\n")
 			fetched[i] = &Attestation{
 				Bundle: a.Bundle,
 			}
