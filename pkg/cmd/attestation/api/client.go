@@ -209,19 +209,19 @@ func (c *LiveClient) getBundle(url string) (*bundle.Bundle, error) {
 		var out []byte
 		decompressed, err := snappy.Decode(out, body)
 		if err != nil {
-			return fmt.Errorf("failed to decompress with snappy: %w", err)
+			return backoff.Permanent(fmt.Errorf("failed to decompress with snappy: %w", err))
 		}
 
 		var pbBundle v1.Bundle
 		if err = protojson.Unmarshal(decompressed, &pbBundle); err != nil {
-			return fmt.Errorf("failed to unmarshal to bundle: %w", err)
+			return backoff.Permanent(fmt.Errorf("failed to unmarshal to bundle: %w", err))
 		}
 
 		c.logger.VerbosePrintf("Successfully fetched bundle\n\n")
 
 		sgBundle, err = bundle.NewBundle(&pbBundle)
 		if err != nil {
-			return fmt.Errorf("failed to create new bundle: %w", err)
+			return backoff.Permanent(fmt.Errorf("failed to create new bundle: %w", err))
 		}
 
 		return nil
