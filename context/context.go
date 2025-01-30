@@ -105,7 +105,7 @@ func (r *ResolvedRemotes) BaseRepo(io *iostreams.IOStreams) (ghrepo.Interface, e
 	fmt.Fprintln(io.Out)
 
 	return nil, errors.New(
-		"please run `gh repo set-default` to select a default remote repository.")
+		"please run `gh repo set-default` to select a default remote repository.\nTo learn more about the default repository, run: gh repo set-default --help")
 }
 
 func (r *ResolvedRemotes) HeadRepos() ([]*api.Repository, error) {
