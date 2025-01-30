@@ -321,7 +321,7 @@ func TestJSONProjectItem_DraftIssue_ProjectV2ItemFieldIterationValue(t *testing.
 	assert.NoError(t, err)
 	assert.JSONEq(
 		t,
-		`{"items":[{"sprint":{"title":"Iteration Title","startDate":"","duration":0},"content":{"type":"DraftIssue","body":"a body","title":"Pull Request title","id":"draftIssueId"},"id":"draftIssueId"}],"totalCount":5}`,
+		`{"items":[{"sprint":{"title":"Iteration Title","startDate":"","duration":0,"iterationId":""},"content":{"type":"DraftIssue","body":"a body","title":"Pull Request title","id":"draftIssueId"},"id":"draftIssueId"}],"totalCount":5}`,
 		string(out))
 
 }
