@@ -170,10 +170,7 @@ func TestFetchBundleFromAttestations_BundleURL(t *testing.T) {
 	}
 
 	att1 := makeTestAttestation()
-	att1.Bundle = nil
 	att2 := makeTestAttestation()
-	att2.Bundle = nil
-	// zero out the bundle field so it tries fetching by URL
 	attestations := []*Attestation{&att1, &att2}
 	fetched, err := client.fetchBundleFromAttestations(attestations)
 	require.NoError(t, err)
@@ -182,56 +179,28 @@ func TestFetchBundleFromAttestations_BundleURL(t *testing.T) {
 	httpClient.AssertNumberOfCalls(t, "OnGetSuccess", 2)
 }
 
-func TestFetchBundleFromAttestations_InvalidAttestation(t *testing.T) {
+func TestFetchBundleFromAttestations_MissingBundleAndBundleURLFields(t *testing.T) {
 	httpClient := &mockHttpClient{}
 	client := LiveClient{
 		httpClient: httpClient,
 		logger:     io.NewTestHandler(),
 	}
 
+	// If both the BundleURL and Bundle fields are empty, the function should
+	// return an error indicating that
 	att1 := Attestation{}
 	attestations := []*Attestation{&att1}
-	fetched, err := client.fetchBundleFromAttestations(attestations)
-	require.Error(t, err)
-	require.Nil(t, fetched, 2)
+	bundles, err := client.fetchBundleFromAttestations(attestations)
+	require.ErrorContains(t, err, "attestation has no bundle or bundle URL")
+	require.Nil(t, bundles, 2)
 }
 
-func TestFetchBundleFromAttestations_FetchByURLFail(t *testing.T) {
-	mockHTTPClient := &failHttpClient{}
-	// failAfterOneCallHttpClient
-
-	c := &LiveClient{
-		httpClient: mockHTTPClient,
-		logger:     io.NewTestHandler(),
-	}
-
-	a := makeTestAttestation()
-	attestations := []*Attestation{&a}
-	bundle, err := c.fetchBundleFromAttestations(attestations)
-	require.Error(t, err)
-	require.Nil(t, bundle)
-}
-
-func TestFetchBundleFromAttestations_FailWithGetErr(t *testing.T) {
-	mockHTTPClient := &failHttpClient{}
-
-	c := &LiveClient{
-		httpClient: mockHTTPClient,
-		logger:     io.NewTestHandler(),
-	}
-
-	a := makeTestAttestation()
-	a.Bundle = nil
-	attestations := []*Attestation{&a}
-	bundle, err := c.fetchBundleFromAttestations(attestations)
-	require.Error(t, err)
-	require.Nil(t, bundle)
-	mockHTTPClient.AssertNumberOfCalls(t, "OnGetFail", 1)
-}
-
-func TestFetchBundleFromAttestations_FetchByURL5XX_Resp(t *testing.T) {
+func TestFetchBundleFromAttestations_FailOnTheSecondAttestation(t *testing.T) {
 	mockHTTPClient := &failAfterNCallsHttpClient{
-		FailOnCallN:              1,
+		// the initial HTTP request will succeed, which returns a bundle for the first attestation
+		// all following HTTP requests will fail, which means the function fails to fetch a bundle
+		// for the second attestation and the function returns an error
+		FailOnCallN:              2,
 		FailOnAllSubsequentCalls: true,
 	}
 
@@ -240,11 +209,28 @@ func TestFetchBundleFromAttestations_FetchByURL5XX_Resp(t *testing.T) {
 		logger:     io.NewTestHandler(),
 	}
 
+	att1 := makeTestAttestation()
+	att2 := makeTestAttestation()
+	attestations := []*Attestation{&att1, &att2}
+	bundles, err := c.fetchBundleFromAttestations(attestations)
+	require.Error(t, err)
+	require.Nil(t, bundles)
+}
+
+func TestFetchBundleFromAttestations_FailAfterRetrying(t *testing.T) {
+	mockHTTPClient := &reqFailHttpClient{}
+
+	c := &LiveClient{
+		httpClient: mockHTTPClient,
+		logger:     io.NewTestHandler(),
+	}
+
 	a := makeTestAttestation()
 	attestations := []*Attestation{&a}
 	bundle, err := c.fetchBundleFromAttestations(attestations)
 	require.Error(t, err)
 	require.Nil(t, bundle)
+	mockHTTPClient.AssertNumberOfCalls(t, "OnGetReqFail", 4)
 }
 
 func TestFetchBundleFromAttestations_FallbackToBundleField(t *testing.T) {
@@ -255,6 +241,7 @@ func TestFetchBundleFromAttestations_FallbackToBundleField(t *testing.T) {
 		logger:     io.NewTestHandler(),
 	}
 
+	// If the bundle URL is empty, the code will fallback to the bundle field
 	a := Attestation{Bundle: data.SigstoreBundle(t)}
 	attestations := []*Attestation{&a}
 	fetched, err := c.fetchBundleFromAttestations(attestations)
@@ -263,6 +250,7 @@ func TestFetchBundleFromAttestations_FallbackToBundleField(t *testing.T) {
 	mockHTTPClient.AssertNotCalled(t, "OnGetSuccess")
 }
 
+// getBundle successfully fetches a bundle on the first HTTP request attempt
 func TestGetBundle(t *testing.T) {
 	mockHTTPClient := &mockHttpClient{}
 
@@ -271,13 +259,15 @@ func TestGetBundle(t *testing.T) {
 		logger:     io.NewTestHandler(),
 	}
 
-	b, err := c.getBundle("whatever")
+	b, err := c.getBundle("https://mybundleurl.com")
 	require.NoError(t, err)
 	require.Equal(t, "application/vnd.dev.sigstore.bundle.v0.3+json", b.GetMediaType())
 	mockHTTPClient.AssertNumberOfCalls(t, "OnGetSuccess", 1)
 }
 
-func TestGetBundle_Retry(t *testing.T) {
+// getBundle retries successfully when the initial HTTP request returns
+// a 5XX status code
+func TestGetBundle_SuccessfulRetry(t *testing.T) {
 	mockHTTPClient := &failAfterNCallsHttpClient{
 		FailOnCallN:              1,
 		FailOnAllSubsequentCalls: false,
@@ -294,8 +284,26 @@ func TestGetBundle_Retry(t *testing.T) {
 	mockHTTPClient.AssertNumberOfCalls(t, "OnGetFailAfterNCalls", 2)
 }
 
-func TestGetBundle_Fail(t *testing.T) {
-	mockHTTPClient := &failHttpClient{}
+// getBundle does not retry when the function fails with a permanent backoff error condition
+func TestGetBundle_PermanentBackoffFail(t *testing.T) {
+	mockHTTPClient := &invalidBundleClient{}
+	c := &LiveClient{
+		httpClient: mockHTTPClient,
+		logger:     io.NewTestHandler(),
+	}
+
+	b, err := c.getBundle("mybundleurl")
+	// var permanent *backoff.PermanentError
+	//require.IsType(t, &backoff.PermanentError{}, err)
+	require.Error(t, err)
+	require.Nil(t, b)
+	mockHTTPClient.AssertNumberOfCalls(t, "OnGetInvalidBundle", 1)
+}
+
+// getBundle retries when the HTTP request fails
+func TestGetBundle_RequestFail(t *testing.T) {
+	mockHTTPClient := &reqFailHttpClient{}
+
 	c := &LiveClient{
 		httpClient: mockHTTPClient,
 		logger:     io.NewTestHandler(),
@@ -304,7 +312,7 @@ func TestGetBundle_Fail(t *testing.T) {
 	b, err := c.getBundle("mybundleurl")
 	require.Error(t, err)
 	require.Nil(t, b)
-	mockHTTPClient.AssertNumberOfCalls(t, "OnGetFail", 1)
+	mockHTTPClient.AssertNumberOfCalls(t, "OnGetReqFail", 4)
 }
 
 func TestGetTrustDomain(t *testing.T) {

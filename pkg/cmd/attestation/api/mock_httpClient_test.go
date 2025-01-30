@@ -27,13 +27,29 @@ func (m *mockHttpClient) Get(url string) (*http.Response, error) {
 	}, nil
 }
 
-type failHttpClient struct {
+type invalidBundleClient struct {
 	mock.Mock
 }
 
-func (m *failHttpClient) Get(url string) (*http.Response, error) {
-	m.On("OnGetFail").Return()
-	m.MethodCalled("OnGetFail")
+func (m *invalidBundleClient) Get(url string) (*http.Response, error) {
+	m.On("OnGetInvalidBundle").Return()
+	m.MethodCalled("OnGetInvalidBundle")
+
+	var compressed []byte
+	compressed = snappy.Encode(compressed, []byte("invalid bundle bytes"))
+	return &http.Response{
+		StatusCode: 200,
+		Body:       io.NopCloser(bytes.NewReader(compressed)),
+	}, nil
+}
+
+type reqFailHttpClient struct {
+	mock.Mock
+}
+
+func (m *reqFailHttpClient) Get(url string) (*http.Response, error) {
+	m.On("OnGetReqFail").Return()
+	m.MethodCalled("OnGetReqFail")
 
 	return &http.Response{
 		StatusCode: 500,
