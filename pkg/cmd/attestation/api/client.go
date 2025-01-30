@@ -173,6 +173,7 @@ func (c *LiveClient) fetchBundleFromAttestations(attestations []*Attestation) ([
 			fetched[i] = &Attestation{
 				Bundle: b,
 			}
+
 			return nil
 		})
 	}

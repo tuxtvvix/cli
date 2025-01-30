@@ -1,4 +1,4 @@
-package list
+package view
 
 import (
 	"encoding/json"
@@ -11,12 +11,12 @@ import (
 	"github.com/cli/cli/v2/pkg/cmd/repo/autolink/shared"
 )
 
-type AutolinkLister struct {
+type AutolinkViewer struct {
 	HTTPClient *http.Client
 }
 
-func (a *AutolinkLister) List(repo ghrepo.Interface) ([]shared.Autolink, error) {
-	path := fmt.Sprintf("repos/%s/%s/autolinks", repo.RepoOwner(), repo.RepoName())
+func (a *AutolinkViewer) View(repo ghrepo.Interface, id string) (*shared.Autolink, error) {
+	path := fmt.Sprintf("repos/%s/%s/autolinks/%s", repo.RepoOwner(), repo.RepoName(), id)
 	url := ghinstance.RESTPrefix(repo.RepoHost()) + path
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
@@ -30,15 +30,17 @@ func (a *AutolinkLister) List(repo ghrepo.Interface) ([]shared.Autolink, error) 
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNotFound {
-		return nil, fmt.Errorf("error getting autolinks: HTTP 404: Perhaps you are missing admin rights to the repository? (https://api.github.com/%s)", path)
+		return nil, fmt.Errorf("HTTP 404: Either no autolink with this ID exists for this repository or you are missing admin rights to the repository. (https://api.github.com/%s)", path)
 	} else if resp.StatusCode > 299 {
 		return nil, api.HandleHTTPError(resp)
 	}
-	var autolinks []shared.Autolink
-	err = json.NewDecoder(resp.Body).Decode(&autolinks)
+
+	var autolink shared.Autolink
+	err = json.NewDecoder(resp.Body).Decode(&autolink)
+
 	if err != nil {
 		return nil, err
 	}
 
-	return autolinks, nil
+	return &autolink, nil
 }
