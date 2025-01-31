@@ -219,17 +219,17 @@ func TestFind(t *testing.T) {
 				baseRepoFn: nil,
 				branchFn: func() (string, error) {
 					return "", &git.GitError{
-						Stderr:   "fatal: not a git repository (or any of the parent directories): .git",
+						Stderr:   "fatal: branchFn error",
 						ExitCode: 128,
 					}
 				},
 				branchConfig: stubBranchConfig(git.BranchConfig{}, &git.GitError{
-					Stderr:   "fatal: not a git repository (or any of the parent directories): .git",
+					Stderr:   "fatal: branchConfig error",
 					ExitCode: 128,
 				}),
 				pushDefault: stubPushDefault("simple", nil),
 				remotePushDefault: stubRemotePushDefault("", &git.GitError{
-					Stderr:   "fatal: not a git repository (or any of the parent directories): .git",
+					Stderr:   "fatal: remotePushDefault error",
 					ExitCode: 128,
 				}),
 			},
