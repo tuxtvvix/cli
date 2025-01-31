@@ -6,7 +6,6 @@ import (
 	"errors"
 	"io"
 	"os/exec"
-	"strings"
 
 	"github.com/cli/cli/v2/internal/run"
 )
@@ -48,10 +47,6 @@ func (gc *Command) Output() ([]byte, error) {
 		if errors.As(err, &exitError) {
 			ge.Stderr = string(exitError.Stderr)
 			ge.ExitCode = exitError.ExitCode()
-		}
-
-		if strings.Contains(ge.Stderr, "fatal: not a git repository") {
-			ge.err = ErrNoGitRepository
 		}
 		err = &ge
 	}

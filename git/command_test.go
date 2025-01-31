@@ -18,7 +18,7 @@ func TestOutput(t *testing.T) {
 		exitCode int
 		stdout   string
 		stderr   string
-		wantErr  error
+		wantErr  *GitError
 	}{
 		{
 			name:     "successful command",
@@ -32,7 +32,11 @@ func TestOutput(t *testing.T) {
 			stdout:   "",
 			stderr:   "fatal: not a git repository (or any of the parent directories): .git",
 			exitCode: 128,
-			wantErr:  ErrNoGitRepository,
+			wantErr: &GitError{
+				ExitCode: 128,
+				Stderr:   "fatal: not a git repository (or any of the parent directories): .git",
+				err:      &exec.ExitError{},
+			},
 		},
 	}
 
@@ -50,7 +54,9 @@ func TestOutput(t *testing.T) {
 				require.Error(t, err)
 				var gitError *GitError
 				require.ErrorAs(t, err, &gitError)
-				assert.Equal(t, tt.wantErr, gitError.err)
+				assert.Equal(t, tt.wantErr.ExitCode, gitError.ExitCode)
+				assert.Equal(t, tt.wantErr.Stderr, gitError.Stderr)
+				assert.Equal(t, tt.wantErr.Error(), gitError.Error())
 			} else {
 				require.NoError(t, err)
 			}
