@@ -69,7 +69,7 @@ func NewCmdDelete(f *cmdutil.Factory, runF func(*DeleteOptions) error) *cobra.Co
 				return err
 			}
 
-			if opts.SucceedOnNoCaches && (!opts.DeleteAll || len(args) == 1) {
+			if !opts.DeleteAll && opts.SucceedOnNoCaches {
 				return cmdutil.FlagErrorf("--succeed-on-no-caches must be used in conjunction with --all")
 			}
 
@@ -113,16 +113,11 @@ func deleteRun(opts *DeleteOptions) error {
 		caches, err := shared.GetCaches(client, repo, shared.GetCachesOptions{Limit: -1})
 		opts.IO.StopProgressIndicator()
 		if err != nil {
-			if opts.SucceedOnNoCaches {
-				fmt.Println(err)
-				return nil
-			} else {
-				return err
-			}
+			return err
 		}
 		if len(caches.ActionsCaches) == 0 {
 			if opts.SucceedOnNoCaches {
-				fmt.Printf("%s No caches to delete\n", opts.IO.ColorScheme().SuccessIcon())
+				fmt.Fprintf(opts.IO.Out, "%s No caches to delete\n", opts.IO.ColorScheme().SuccessIcon())
 				return nil
 			} else {
 				return fmt.Errorf("%s No caches to delete", opts.IO.ColorScheme().FailureIcon())
