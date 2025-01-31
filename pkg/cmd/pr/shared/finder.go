@@ -201,7 +201,11 @@ func (f *finder) Find(opts FindOptions) (*api.PullRequest, ghrepo.Interface, err
 			f.prNumber = prNumber
 		} else {
 			f.branchName = opts.Selector
-			prRefs, _ = ParsePRRefs(f.branchName, git.BranchConfig{}, "", "", "", f.baseRefRepo, remotes.Remotes{})
+			// We don't expect an error here because parsedPushRevision is empty
+			prRefs, err = ParsePRRefs(f.branchName, git.BranchConfig{}, "", "", "", f.baseRefRepo, remotes.Remotes{})
+			if err != nil {
+				return nil, nil, err
+			}
 		}
 	}
 
