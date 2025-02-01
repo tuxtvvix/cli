@@ -28,7 +28,7 @@ type CheckoutOptions struct {
 	Branch     func() (string, error)
 
 	Finder   shared.PRFinder
-	Prompter shared.Prompter
+	Prompter shared.Prompt
 	Lister   shared.PRLister
 
 	Interactive       bool
@@ -287,7 +287,7 @@ func executeCmds(client *git.Client, credentialPattern git.CredentialPattern, cm
 	return nil
 }
 
-func resolvePR(baseRepo ghrepo.Interface, prompter shared.Prompter, pullRequestSelector string, isInteractive bool, pullRequestFinder shared.PRFinder, prLister shared.PRLister, io *iostreams.IOStreams) (*api.PullRequest, error) {
+func resolvePR(baseRepo ghrepo.Interface, prompter shared.Prompt, pullRequestSelector string, isInteractive bool, pullRequestFinder shared.PRFinder, prLister shared.PRLister, io *iostreams.IOStreams) (*api.PullRequest, error) {
 	// When non-interactive
 	if pullRequestSelector != "" {
 		pr, _, err := pullRequestFinder.Find(shared.FindOptions{
@@ -338,7 +338,7 @@ func resolvePR(baseRepo ghrepo.Interface, prompter shared.Prompter, pullRequestS
 	return pr, err
 }
 
-func promptForPR(prompter shared.Prompter, jobs api.PullRequestAndTotalCount) (*api.PullRequest, error) {
+func promptForPR(prompter shared.Prompt, jobs api.PullRequestAndTotalCount) (*api.PullRequest, error) {
 	candidates := []string{}
 	for _, pr := range jobs.PullRequests {
 		candidates = append(candidates, fmt.Sprintf("%d\t%s %s [%s]",
