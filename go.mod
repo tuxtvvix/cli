@@ -54,6 +54,7 @@ require (
 	google.golang.org/protobuf v1.36.4
 	gopkg.in/h2non/gock.v1 v1.1.2
 	gopkg.in/yaml.v3 v3.0.1
+	gotest.tools/v3 v3.0.3
 )
 
 require (
