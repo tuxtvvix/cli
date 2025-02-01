@@ -222,7 +222,7 @@ func listRun(opts *ListOptions) error {
 		table.AddField(text.RemoveExcessiveWhitespace(pr.Title))
 		table.AddField(pr.HeadLabel(), tableprinter.WithColor(cs.Cyan))
 		if !isTTY {
-			table.AddField(prStateWithDraft(&pr))
+			table.AddField(shared.PrStateWithDraft(&pr))
 		}
 		table.AddTimeField(opts.Now(), pr.CreatedAt, cs.Gray)
 		table.EndRow()
@@ -233,12 +233,4 @@ func listRun(opts *ListOptions) error {
 	}
 
 	return nil
-}
-
-func prStateWithDraft(pr *api.PullRequest) string {
-	if pr.IsDraft && pr.State == "OPEN" {
-		return "DRAFT"
-	}
-
-	return pr.State
 }
