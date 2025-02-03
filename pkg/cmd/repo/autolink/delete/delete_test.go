@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/MakeNowJust/heredoc"
 	"github.com/cli/cli/v2/internal/browser"
 	"github.com/cli/cli/v2/internal/ghrepo"
 	"github.com/cli/cli/v2/internal/prompter"
@@ -133,7 +134,10 @@ func TestDeleteRun(t *testing.T) {
 					return nil
 				}
 			},
-			wantStdout: "Autolink 123 has key prefix TICKET-.✓ Autolink 123 deleted from OWNER/REPO\n",
+			wantStdout: heredoc.Doc(`
+				Autolink 123 has key prefix TICKET-.
+				✓ Autolink 123 deleted from OWNER/REPO
+			`),
 		},
 		{
 			name: "delete with confirm flag",
@@ -177,7 +181,7 @@ func TestDeleteRun(t *testing.T) {
 			},
 			expectedErr:    errTestPrompt,
 			expectedErrMsg: errTestPrompt.Error(),
-			wantStdout:     "Autolink 123 has key prefix TICKET-.",
+			wantStdout:     "Autolink 123 has key prefix TICKET-.\n",
 		},
 		{
 			name: "view error",
@@ -216,7 +220,7 @@ func TestDeleteRun(t *testing.T) {
 			},
 			expectedErr:    errTestAutolinkClientDelete,
 			expectedErrMsg: errTestAutolinkClientDelete.Error(),
-			wantStdout:     "Autolink 123 has key prefix TICKET-.",
+			wantStdout:     "Autolink 123 has key prefix TICKET-.\n",
 		},
 	}
 

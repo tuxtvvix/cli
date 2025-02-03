@@ -83,9 +83,11 @@ func deleteRun(opts *deleteOptions) error {
 	}
 
 	if !opts.Confirmed {
-		fmt.Fprintf(out, "Autolink %s has key prefix %s.", cs.Cyan(opts.ID), autolink.KeyPrefix)
+		fmt.Fprintf(out, "Autolink %s has key prefix %s.\n", cs.Cyan(opts.ID), autolink.KeyPrefix)
 
-		if err := opts.Prompter.ConfirmDeletion(autolink.KeyPrefix); err != nil {
+		err := opts.Prompter.ConfirmDeletion(autolink.KeyPrefix)
+
+		if err != nil {
 			return err
 		}
 	}
