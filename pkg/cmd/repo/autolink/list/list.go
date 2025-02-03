@@ -104,7 +104,11 @@ func listRun(opts *listOptions) error {
 	}
 
 	if opts.IO.IsStdoutTTY() {
-		title := fmt.Sprintf("Showing %s in %s", text.Pluralize(len(autolinks), "autolink reference"), cs.Bold(ghrepo.FullName(repo)))
+		title := fmt.Sprintf(
+			"Showing %s in %s",
+			text.Pluralize(len(autolinks), "autolink reference"),
+			cs.Bold(ghrepo.FullName(repo)),
+		)
 		fmt.Fprintf(opts.IO.Out, "\n%s\n\n", title)
 	}
 
