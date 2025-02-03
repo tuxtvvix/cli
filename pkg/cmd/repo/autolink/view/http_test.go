@@ -69,7 +69,7 @@ func TestAutolinkViewer_View(t *testing.T) {
 				"status": "404"
 			}`,
 			expectErr:      true,
-			expectedErrMsg: "HTTP 404: Either no autolink with this ID exists for this repository or you are missing admin rights to the repository. (https://api.github.com/repos/OWNER/REPO/autolinks/123)",
+			expectedErrMsg: "HTTP 404: Perhaps you are missing admin rights to the repository? (https://api.github.com/repos/OWNER/REPO/autolinks/123)",
 		},
 	}
 
