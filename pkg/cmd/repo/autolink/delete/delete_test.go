@@ -133,7 +133,7 @@ func TestDeleteRun(t *testing.T) {
 					return nil
 				}
 			},
-			wantStdout: "Autolink 123 has key prefix TICKET-.✓Autolink 123 deleted from OWNER/REPO\n",
+			wantStdout: "Autolink 123 has key prefix TICKET-.✓ Autolink 123 deleted from OWNER/REPO\n",
 		},
 		{
 			name: "delete with confirm flag",
