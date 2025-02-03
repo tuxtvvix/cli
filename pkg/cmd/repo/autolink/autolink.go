@@ -6,7 +6,6 @@ import (
 	cmdDelete "github.com/cli/cli/v2/pkg/cmd/repo/autolink/delete"
 	cmdList "github.com/cli/cli/v2/pkg/cmd/repo/autolink/list"
 	cmdView "github.com/cli/cli/v2/pkg/cmd/repo/autolink/view"
-
 	"github.com/cli/cli/v2/pkg/cmdutil"
 	"github.com/spf13/cobra"
 )
