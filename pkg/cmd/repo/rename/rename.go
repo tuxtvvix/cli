@@ -59,7 +59,7 @@ func NewCmdRename(f *cmdutil.Factory, runf func(*RenameOptions) error) *cobra.Co
 			with %[1]s--repo%[1]s is renamed.
 			
 			To transfer repository ownership to another user account or organization,
-			you must follow additional steps on GitHub.com.
+			you must follow additional steps on GitHub.com
 
 			For more information on transferring repository ownership, see:
 			<https://docs.github.com/en/repositories/creating-and-managing-repositories/transferring-a-repository>
