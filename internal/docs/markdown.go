@@ -142,7 +142,7 @@ func genMarkdownCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string)
 		fmt.Fprintf(w, "```\n%s\n```\n\n", cmd.UseLine())
 	}
 	if hasLong {
-		longWithEscapedPipe := strings.ReplaceAll(cmd.Long, "|", "\\|")
+		longWithEscapedPipe := strings.ReplaceAll(cmd.Long, "|", "&#124;")
 		fmt.Fprintf(w, "%s\n\n", longWithEscapedPipe)
 	}
 
