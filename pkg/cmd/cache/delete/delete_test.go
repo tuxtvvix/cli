@@ -217,7 +217,7 @@ func TestDeleteRun(t *testing.T) {
 		},
 		{
 			name: "no caches to delete when deleting all",
-			opts: DeleteOptions{Identifier: "123", DeleteAll: true},
+			opts: DeleteOptions{DeleteAll: true},
 			stubs: func(reg *httpmock.Registry) {
 				reg.Register(
 					httpmock.REST("GET", "repos/OWNER/REPO/actions/caches"),
@@ -233,7 +233,7 @@ func TestDeleteRun(t *testing.T) {
 		},
 		{
 			name: "no caches to delete when deleting all but succeed on no cache tty",
-			opts: DeleteOptions{Identifier: "123", DeleteAll: true, SucceedOnNoCaches: true},
+			opts: DeleteOptions{DeleteAll: true, SucceedOnNoCaches: true},
 			stubs: func(reg *httpmock.Registry) {
 				reg.Register(
 					httpmock.REST("GET", "repos/OWNER/REPO/actions/caches"),
@@ -249,7 +249,7 @@ func TestDeleteRun(t *testing.T) {
 		},
 		{
 			name: "no caches to delete when deleting all but succeed on no cache non-tty",
-			opts: DeleteOptions{Identifier: "123", DeleteAll: true, SucceedOnNoCaches: true},
+			opts: DeleteOptions{DeleteAll: true, SucceedOnNoCaches: true},
 			stubs: func(reg *httpmock.Registry) {
 				reg.Register(
 					httpmock.REST("GET", "repos/OWNER/REPO/actions/caches"),
@@ -261,7 +261,7 @@ func TestDeleteRun(t *testing.T) {
 			},
 			tty:        false,
 			wantErr:    false,
-			wantStdout: "",
+			wantStdout: "✓ No caches to delete\n",
 		},
 	}
 
