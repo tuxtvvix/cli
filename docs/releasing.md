@@ -9,9 +9,7 @@ script/release vX.Y.Z
 See `script/release --help` for more information.
 
 > [!NOTE]
->
-> Every production release will request an approval by the select few people
-> before it can proceed.
+> Deployment workflow requires maintainer approval to run.
 
 What this does is:
 
@@ -21,12 +19,13 @@ What this does is:
 - Uploads all release artifacts to a new GitHub Release;
 - A new git tag `vX.Y.Z` is created in the remote repository;
 - The changelog is [generated from the list of merged pull requests](https://docs.github.com/en/repositories/releasing-projects-on-github/automatically-generated-release-notes);
-- Updates cli.github.com with the contents of the new release;
+- Updates [GitHub CLI marketing site](https://cli.github.com) with the contents of the new release;
 - Updates the [`gh` Homebrew formula](https://github.com/williammartin/homebrew-core/blob/master/Formula/g/gh.rb) in the [`homebrew/homebrew-core` repo](https://github.com/search?q=repo%3AHomebrew%2Fhomebrew-core+%22gh%22+in%3Atitle&type=pullrequests).
-  - The [GitHub CLI deployment workflow](.github/workflows/deployment.yml)
-    initiates a PR to update the `gh` Homebrew formula.
-  - This updated formula is then picked up by the scheduled workflow for its
-    inclusion in the `homebrew/homebrew-core`.
+
+> [!NOTE]
+> `Homebrew/formulae.brew.sh` makes new formula versions available every 15 minutes through scheduled [CI workflow](https://github.com/Homebrew/formulae.brew.sh/actions/workflows/tests.yml).
+>
+> For more information, see https://docs.brew.sh/Formula-Cookbook#an-introduction
 
 To test out the build system while avoiding creating an actual release:
 
