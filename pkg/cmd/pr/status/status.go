@@ -55,8 +55,8 @@ func NewCmdStatus(f *cmdutil.Factory, runF func(*StatusOptions) error) *cobra.Co
 		Long: heredoc.Docf(`
 			Show status of relevant pull requests.
 
-			The status shows a summary of PRs that includes information such as
-			PR number, title, CI checks, reviews, etc.
+			The status shows a summary of pull requests that includes information such as
+			pull request number, title, CI checks, reviews, etc.
 
 			To see more details of CI checks, run %[1]sgh pr checks%[1]s.
 		`, "`"),
