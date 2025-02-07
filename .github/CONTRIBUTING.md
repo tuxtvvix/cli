@@ -15,8 +15,7 @@ We accept pull requests for bug fixes and features where we've discussed the app
 
 ### Please _do not_:
 
-* Open pull requests for issues marked `needs-design`, `needs-investigation`, or `blocked`
-* Open pull requests that haven't been approved for work in an issue
+* Open a pull request for issues without the `help wanted` label or explicit Acceptance Criteria
 * Expand pull request scope to include changes that are not described in the issue's Acceptance Criteria
 * Add installation instructions specifically for your OS/package manager
 * Open pull requests for any issue marked `core`. These issues require additional context from
