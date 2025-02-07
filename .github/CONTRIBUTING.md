@@ -11,7 +11,7 @@ We accept pull requests for bug fixes and features where we've discussed the app
 * Open an issue to propose a significant change
 * Open an issue to propose a design for an issue labelled [`needs-design` and `help wanted`][needs design and help wanted], following the [proposing a design guidelines](#proposing-a-design) instructions below
 * Mention `@cli/code-reviewers` when an issue you want to work on does not have clear Acceptance Criteria
-* Open a pull request for any issue labelled [`help wanted`][hw] or [`good first issue`][gfi]
+* Open a pull request for any issue labelled [`help wanted`][hw] and [`good first issue`][gfi]
 
 ### Please _do not_:
 
