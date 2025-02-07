@@ -58,7 +58,7 @@ func NewCmdStatus(f *cmdutil.Factory, runF func(*StatusOptions) error) *cobra.Co
 			The status shows a summary of PRs that includes information such as
 			PR number, title, CI checks, reviews, etc.
 
-			For the details of CI checks, run %[1]sgh pr checks%[1]s.
+			To see more details of CI checks, run %[1]sgh pr checks%[1]s.
 		`, "`"),
 		Args: cmdutil.NoArgsQuoteReminder,
 		RunE: func(cmd *cobra.Command, args []string) error {
