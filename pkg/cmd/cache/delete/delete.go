@@ -90,7 +90,7 @@ func NewCmdDelete(f *cmdutil.Factory, runF func(*DeleteOptions) error) *cobra.Co
 	}
 
 	cmd.Flags().BoolVarP(&opts.DeleteAll, "all", "a", false, "Delete all caches")
-	cmd.Flags().BoolVarP(&opts.SucceedOnNoCaches, "succeed-on-no-caches", "", false, "Return exit code 0 if no caches found. Must be used in conjunction with `--all`")
+	cmd.Flags().BoolVar(&opts.SucceedOnNoCaches, "succeed-on-no-caches", false, "Return exit code 0 if no caches found. Must be used in conjunction with `--all`")
 
 	return cmd
 }
