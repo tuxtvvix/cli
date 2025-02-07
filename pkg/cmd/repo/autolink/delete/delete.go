@@ -52,7 +52,9 @@ func NewCmdDelete(f *cmdutil.Factory, runF func(*deleteOptions) error) *cobra.Co
 			opts.AutolinkViewClient = &view.AutolinkViewer{HTTPClient: httpClient}
 			opts.ID = args[0]
 
-			opts.Confirmed = cmd.Flags().Changed("yes")
+			if !opts.IO.CanPrompt() && !opts.Confirmed {
+				return cmdutil.FlagErrorf("--yes required when not running interactively")
+			}
 
 			if runF != nil {
 				return runF(opts)
@@ -82,7 +84,7 @@ func deleteRun(opts *deleteOptions) error {
 		return fmt.Errorf("%s %w", cs.Red("error deleting autolink:"), err)
 	}
 
-	if !opts.Confirmed {
+	if opts.IO.CanPrompt() && !opts.Confirmed {
 		fmt.Fprintf(out, "Autolink %s has key prefix %s.\n", cs.Cyan(opts.ID), autolink.KeyPrefix)
 
 		err := opts.Prompter.ConfirmDeletion(autolink.KeyPrefix)
@@ -97,7 +99,9 @@ func deleteRun(opts *deleteOptions) error {
 		return err
 	}
 
-	fmt.Fprintf(out, "%s Autolink %s deleted from %s\n", cs.SuccessIcon(), cs.Cyan(opts.ID), cs.Bold(ghrepo.FullName(repo)))
+	if opts.IO.IsStdoutTTY() {
+		fmt.Fprintf(out, "%s Autolink %s deleted from %s\n", cs.SuccessIcon(), cs.Cyan(opts.ID), cs.Bold(ghrepo.FullName(repo)))
+	}
 
 	return nil
 }

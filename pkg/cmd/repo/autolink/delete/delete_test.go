@@ -23,29 +23,51 @@ func TestNewCmdDelete(t *testing.T) {
 		name    string
 		input   string
 		output  deleteOptions
+		isTTY   bool
 		wantErr bool
 		errMsg  string
 	}{
 		{
 			name:    "no argument",
 			input:   "",
+			isTTY:   true,
 			wantErr: true,
 			errMsg:  "accepts 1 arg(s), received 0",
 		},
 		{
 			name:   "id provided",
 			input:  "123",
+			isTTY:  true,
 			output: deleteOptions{ID: "123"},
 		},
 		{
 			name:   "yes flag",
 			input:  "123 --yes",
+			isTTY:  true,
 			output: deleteOptions{ID: "123", Confirmed: true},
+		},
+		{
+			name:   "non-TTY",
+			input:  "123 --yes",
+			isTTY:  false,
+			output: deleteOptions{ID: "123", Confirmed: true},
+		},
+		{
+			name:    "non-TTY missing yes flag",
+			input:   "123",
+			isTTY:   false,
+			wantErr: true,
+			errMsg:  "--yes required when not running interactively",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ios, _, _, _ := iostreams.Test()
+
+			ios.SetStdinTTY(tt.isTTY)
+			ios.SetStdoutTTY(tt.isTTY)
+			ios.SetStderrTTY(tt.isTTY)
+
 			f := &cmdutil.Factory{
 				IOStreams: ios,
 			}
@@ -104,12 +126,12 @@ func TestDeleteRun(t *testing.T) {
 	tests := []struct {
 		name          string
 		opts          *deleteOptions
+		isTTY         bool
 		stubDeleter   stubAutolinkDeleter
 		stubViewer    stubAutolinkViewer
 		prompterStubs func(*prompter.PrompterMock)
 
 		wantStdout     string
-		wantStderr     string
 		expectedErr    error
 		expectedErrMsg string
 	}{
@@ -118,6 +140,7 @@ func TestDeleteRun(t *testing.T) {
 			opts: &deleteOptions{
 				ID: "123",
 			},
+			isTTY: true,
 			stubViewer: stubAutolinkViewer{
 				autolink: &shared.Autolink{
 					ID:             123,
@@ -145,6 +168,7 @@ func TestDeleteRun(t *testing.T) {
 				ID:        "123",
 				Confirmed: true,
 			},
+			isTTY: true,
 			stubViewer: stubAutolinkViewer{
 				autolink: &shared.Autolink{
 					ID:             123,
@@ -153,16 +177,15 @@ func TestDeleteRun(t *testing.T) {
 					IsAlphanumeric: true,
 				},
 			},
-			stubDeleter: stubAutolinkDeleter{
-				err: nil,
-			},
-			wantStdout: "✓ Autolink 123 deleted from OWNER/REPO\n",
+			stubDeleter: stubAutolinkDeleter{},
+			wantStdout:  "✓ Autolink 123 deleted from OWNER/REPO\n",
 		},
 		{
 			name: "confirmation fails",
 			opts: &deleteOptions{
 				ID: "123",
 			},
+			isTTY: true,
 			stubViewer: stubAutolinkViewer{
 				autolink: &shared.Autolink{
 					ID:             123,
@@ -171,9 +194,7 @@ func TestDeleteRun(t *testing.T) {
 					IsAlphanumeric: true,
 				},
 			},
-			stubDeleter: stubAutolinkDeleter{
-				err: nil,
-			},
+			stubDeleter: stubAutolinkDeleter{},
 			prompterStubs: func(pm *prompter.PrompterMock) {
 				pm.ConfirmDeletionFunc = func(_ string) error {
 					return errTestPrompt
@@ -188,12 +209,11 @@ func TestDeleteRun(t *testing.T) {
 			opts: &deleteOptions{
 				ID: "123",
 			},
+			isTTY: true,
 			stubViewer: stubAutolinkViewer{
 				err: errTestAutolinkClientView,
 			},
-			stubDeleter: stubAutolinkDeleter{
-				err: nil,
-			},
+			stubDeleter:    stubAutolinkDeleter{},
 			expectedErr:    errTestAutolinkClientView,
 			expectedErrMsg: "error deleting autolink: autolink client view error",
 		},
@@ -202,6 +222,7 @@ func TestDeleteRun(t *testing.T) {
 			opts: &deleteOptions{
 				ID: "123",
 			},
+			isTTY: true,
 			stubViewer: stubAutolinkViewer{
 				autolink: &shared.Autolink{
 					ID:             123,
@@ -222,11 +243,65 @@ func TestDeleteRun(t *testing.T) {
 			expectedErrMsg: errTestAutolinkClientDelete.Error(),
 			wantStdout:     "Autolink 123 has key prefix TICKET-.\n",
 		},
+		{
+			name: "no TTY",
+			opts: &deleteOptions{
+				ID:        "123",
+				Confirmed: true,
+			},
+			isTTY: false,
+			stubViewer: stubAutolinkViewer{
+				autolink: &shared.Autolink{
+					ID:             123,
+					KeyPrefix:      "TICKET-",
+					URLTemplate:    "https://example.com/TICKET?query=<num>",
+					IsAlphanumeric: true,
+				}},
+			stubDeleter: stubAutolinkDeleter{},
+			wantStdout:  "",
+		},
+		{
+			name: "no TTY view error",
+			opts: &deleteOptions{
+				ID: "123",
+			},
+			isTTY: false,
+			stubViewer: stubAutolinkViewer{
+				err: errTestAutolinkClientView,
+			},
+			stubDeleter:    stubAutolinkDeleter{},
+			expectedErr:    errTestAutolinkClientView,
+			expectedErrMsg: "error deleting autolink: autolink client view error",
+		},
+		{
+			name: "no TTY delete error",
+			opts: &deleteOptions{
+				ID:        "123",
+				Confirmed: true,
+			},
+			isTTY: false,
+			stubViewer: stubAutolinkViewer{
+				autolink: &shared.Autolink{
+					ID:             123,
+					KeyPrefix:      "TICKET-",
+					URLTemplate:    "https://example.com/TICKET?query=<num>",
+					IsAlphanumeric: true,
+				},
+			},
+			stubDeleter: stubAutolinkDeleter{
+				err: errTestAutolinkClientDelete,
+			},
+			expectedErr:    errTestAutolinkClientDelete,
+			expectedErrMsg: errTestAutolinkClientDelete.Error(),
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ios, _, stdout, stderr := iostreams.Test()
+			ios, _, stdout, _ := iostreams.Test()
+
+			ios.SetStdinTTY(tt.isTTY)
+			ios.SetStdoutTTY(tt.isTTY)
 
 			opts := tt.opts
 			opts.IO = ios
@@ -255,7 +330,6 @@ func TestDeleteRun(t *testing.T) {
 			}
 
 			assert.Equal(t, tt.wantStdout, stdout.String(), "unexpected stdout")
-			assert.Equal(t, tt.wantStderr, stderr.String(), "unexpected stderr")
 		})
 	}
 }
