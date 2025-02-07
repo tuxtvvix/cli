@@ -28,16 +28,20 @@ func TestAutolinkDeleter_Delete(t *testing.T) {
 			stubStatus: http.StatusNoContent,
 		},
 		{
-			name:       "404 repo or autolink not found",
-			id:         "123",
-			stubStatus: http.StatusNotFound,
-			stubRespJSON: `{
-				"message": "Not Found",
-				"documentation_url": "https://docs.github.com/rest/repos/autolinks#get-an-autolink-reference-of-a-repository",
-				"status": "404"
-			}`,
+			name:           "404 repo or autolink not found",
+			id:             "123",
+			stubStatus:     http.StatusNotFound,
+			stubRespJSON:   `{}`, // API response not used in output
 			expectErr:      true,
 			expectedErrMsg: "error deleting autolink: HTTP 404: Perhaps you are missing admin rights to the repository? (https://api.github.com/repos/OWNER/REPO/autolinks/123)",
+		},
+		{
+			name:           "500 unexpected error",
+			id:             "123",
+			stubRespJSON:   `{"messsage": "arbitrary error"}`,
+			stubStatus:     http.StatusInternalServerError,
+			expectErr:      true,
+			expectedErrMsg: "HTTP 500 (https://api.github.com/repos/OWNER/REPO/autolinks/123)",
 		},
 	}
 
@@ -49,7 +53,7 @@ func TestAutolinkDeleter_Delete(t *testing.T) {
 					http.MethodDelete,
 					fmt.Sprintf("repos/%s/%s/autolinks/%s", repo.RepoOwner(), repo.RepoName(), tt.id),
 				),
-				httpmock.StatusStringResponse(tt.stubStatus, tt.stubRespJSON),
+				httpmock.StatusJSONResponse(tt.stubStatus, tt.stubRespJSON),
 			)
 			defer reg.Verify(t)
 
