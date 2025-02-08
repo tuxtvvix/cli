@@ -60,6 +60,7 @@ type CreateOptions struct {
 	NotesStartTag      string
 	VerifyTag          bool
 	NotesFromTag       bool
+	OnlyNew            bool
 }
 
 func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Command {
@@ -194,6 +195,7 @@ func NewCmdCreate(f *cmdutil.Factory, runF func(*CreateOptions) error) *cobra.Co
 	cmdutil.NilBoolFlag(cmd, &opts.IsLatest, "latest", "", "Mark this release as \"Latest\" (default [automatic based on date and version]). --latest=false to explicitly NOT set as latest")
 	cmd.Flags().BoolVarP(&opts.VerifyTag, "verify-tag", "", false, "Abort in case the git tag doesn't already exist in the remote repository")
 	cmd.Flags().BoolVarP(&opts.NotesFromTag, "notes-from-tag", "", false, "Automatically generate notes from annotated tag")
+	cmd.Flags().BoolVar(&opts.OnlyNew, "only-new", false, "Create release only if there are new commits since the last release")
 
 	_ = cmdutil.RegisterBranchCompletionFlags(f.GitClient, cmd, "target")
 
@@ -209,6 +211,16 @@ func createRun(opts *CreateOptions) error {
 	baseRepo, err := opts.BaseRepo()
 	if err != nil {
 		return err
+	}
+
+	if opts.OnlyNew {
+		isNew, err := isNewRelease(httpClient, baseRepo)
+		if err != nil {
+			return err
+		}
+		if !isNew {
+			return fmt.Errorf("no new commits since the last release")
+		}
 	}
 
 	var existingTag bool
