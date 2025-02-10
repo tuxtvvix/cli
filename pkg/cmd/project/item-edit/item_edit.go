@@ -28,6 +28,7 @@ type editItemOpts struct {
 	singleSelectOptionID string
 	iterationID          string
 	clear                bool
+	numberChanged        bool
 	// format
 	exporter cmdutil.Exporter
 }
@@ -76,10 +77,11 @@ func NewCmdEditItem(f *cmdutil.Factory, runF func(config editItemConfig) error) 
 			gh project item-edit --id <item-ID> --field-id <field-ID> --project-id <project-ID> --clear
 		`),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			opts.numberChanged = cmd.Flags().Changed("number")
 			if err := cmdutil.MutuallyExclusive(
 				"only one of `--text`, `--number`, `--date`, `--single-select-option-id` or `--iteration-id` may be used",
 				opts.text != "",
-				opts.number != 0,
+				opts.numberChanged,
 				opts.date != "",
 				opts.singleSelectOptionID != "",
 				opts.iterationID != "",
@@ -89,7 +91,7 @@ func NewCmdEditItem(f *cmdutil.Factory, runF func(config editItemConfig) error) 
 
 			if err := cmdutil.MutuallyExclusive(
 				"cannot use `--text`, `--number`, `--date`, `--single-select-option-id` or `--iteration-id` in conjunction with `--clear`",
-				opts.text != "" || opts.number != 0 || opts.date != "" || opts.singleSelectOptionID != "" || opts.iterationID != "",
+				opts.text != "" || opts.numberChanged || opts.date != "" || opts.singleSelectOptionID != "" || opts.iterationID != "",
 				opts.clear,
 			); err != nil {
 				return err
@@ -146,7 +148,7 @@ func runEditItem(config editItemConfig) error {
 	}
 
 	// update item values
-	if config.opts.text != "" || config.opts.number != 0 || config.opts.date != "" || config.opts.singleSelectOptionID != "" || config.opts.iterationID != "" {
+	if config.opts.text != "" || config.opts.numberChanged || config.opts.date != "" || config.opts.singleSelectOptionID != "" || config.opts.iterationID != "" {
 		return updateItemValues(config)
 	}
 
@@ -173,6 +175,10 @@ func buildUpdateItem(config editItemConfig, date time.Time) (*UpdateProjectV2Fie
 			Text: githubv4.NewString(githubv4.String(config.opts.text)),
 		}
 	} else if config.opts.number != 0 {
+		value = githubv4.ProjectV2FieldValue{
+			Number: githubv4.NewFloat(githubv4.Float(config.opts.number)),
+		}
+	} else if config.opts.numberChanged {
 		value = githubv4.ProjectV2FieldValue{
 			Number: githubv4.NewFloat(githubv4.Float(config.opts.number)),
 		}

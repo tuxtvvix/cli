@@ -56,6 +56,14 @@ func TestNewCmdeditItem(t *testing.T) {
 			},
 		},
 		{
+			name: "number zero",
+			cli:  "--number 0 --id 123",
+			wants: editItemOpts{
+				number: 0,
+				itemID: "123",
+			},
+		},
+		{
 			name: "field-id",
 			cli:  "--field-id FIELD_ID --id 123",
 			wants: editItemOpts{
@@ -292,10 +300,11 @@ func TestRunItemEdit_Number(t *testing.T) {
 	config := editItemConfig{
 		io: ios,
 		opts: editItemOpts{
-			number:    123.45,
-			itemID:    "item_id",
-			projectID: "project_id",
-			fieldID:   "field_id",
+			number:        123.45,
+			numberChanged: true,
+			itemID:        "item_id",
+			projectID:     "project_id",
+			fieldID:       "field_id",
 		},
 		client: client,
 	}
