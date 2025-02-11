@@ -378,8 +378,8 @@ func forkRun(opts *ForkOptions) error {
 			}
 
 			if connectedToTerminal {
-				fmt.Fprintf(opts.IO.Out, "%s Cloned fork\n", cs.SuccessIcon())
-				fmt.Fprintf(opts.IO.Out, "%s Repository %s set as the default repository. To learn more about the default repository, run: gh repo set-default --help\n", cs.WarningIcon(), cs.Bold(ghrepo.FullName(repoToFork)))
+				fmt.Fprintf(stderr, "%s Cloned fork\n", cs.SuccessIcon())
+				fmt.Fprintf(stderr, "%s Repository %s set as the default repository. To learn more about the default repository, run: gh repo set-default --help\n", cs.WarningIcon(), cs.Bold(ghrepo.FullName(repoToFork)))
 			}
 		}
 	}

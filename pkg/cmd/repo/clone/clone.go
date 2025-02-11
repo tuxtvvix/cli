@@ -217,7 +217,7 @@ func cloneRun(opts *CloneOptions) error {
 		connectedToTerminal := opts.IO.IsStdoutTTY()
 		if connectedToTerminal {
 			cs := opts.IO.ColorScheme()
-			fmt.Fprintf(opts.IO.Out, "%s Repository %s set as the default repository. To learn more about the default repository, run: gh repo set-default --help\n", cs.WarningIcon(), cs.Bold(ghrepo.FullName(canonicalRepo.Parent)))
+			fmt.Fprintf(opts.IO.ErrOut, "%s Repository %s set as the default repository. To learn more about the default repository, run: gh repo set-default --help\n", cs.WarningIcon(), cs.Bold(ghrepo.FullName(canonicalRepo.Parent)))
 		}
 	}
 	return nil
