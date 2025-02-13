@@ -47,9 +47,9 @@ func NewCmdCode(f *cmdutil.Factory, runF func(*CodeOptions) error) *cobra.Comman
 			# search code matching "react" and "lifecycle"
 			$ gh search code react lifecycle
 
-			# search code matching "error handling" 
+			# search code matching "error handling"
 			$ gh search code "error handling"
-	
+
 			# search code matching "deque" in Python files
 			$ gh search code deque --language=python
 
