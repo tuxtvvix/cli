@@ -1,6 +1,7 @@
 package factory
 
 import (
+	"errors"
 	"net/url"
 	"testing"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/cli/cli/v2/internal/gh"
 	ghmock "github.com/cli/cli/v2/internal/gh/mock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type identityTranslator struct{}
@@ -287,4 +289,104 @@ func Test_remoteResolver(t *testing.T) {
 			assert.Equal(t, tt.output, names)
 		})
 	}
+}
+
+func Test_remoteResolver_Caching(t *testing.T) {
+	t.Run("cache remotes", func(t *testing.T) {
+		var readRemotesCalled bool
+
+		rr := &remoteResolver{
+			readRemotes: func() (git.RemoteSet, error) {
+				if readRemotesCalled {
+					return git.RemoteSet{}, errors.New("readRemotes should only be called once")
+				}
+
+				readRemotesCalled = true
+				return git.RemoteSet{
+					git.NewRemote("origin", "https://github.com/owner/repo.git"),
+				}, nil
+			},
+			getConfig: func() (gh.Config, error) {
+				cfg := &ghmock.ConfigMock{}
+				cfg.AuthenticationFunc = func() gh.AuthConfig {
+					authCfg := &config.AuthConfig{}
+					authCfg.SetHosts([]string{"github.com"})
+					authCfg.SetDefaultHost("github.com", "default")
+					return authCfg
+				}
+				return cfg, nil
+			},
+			urlTranslator: identityTranslator{},
+		}
+
+		resolver := rr.Resolver()
+
+		remotes, err := resolver()
+		require.NoError(t, err)
+		names := []string{}
+		for _, remote := range remotes {
+			names = append(names, remote.Name)
+		}
+		require.Equal(t, []string{"origin"}, names)
+
+		require.Equal(t, readRemotesCalled, true)
+
+		cachedRemotes, err := resolver()
+		require.NoError(t, err)
+		cachedNames := []string{}
+		for _, remote := range cachedRemotes {
+			cachedNames = append(cachedNames, remote.Name)
+		}
+		require.Equal(t, []string{"origin"}, cachedNames)
+	})
+
+	t.Run("cache error", func(t *testing.T) {
+		var readRemotesCalled bool
+
+		rr := &remoteResolver{
+			readRemotes: func() (git.RemoteSet, error) {
+				if readRemotesCalled {
+					return git.RemoteSet{
+						git.NewRemote("origin", "https://github.com/owner/repo.git"),
+					}, nil
+				}
+
+				readRemotesCalled = true
+				return git.RemoteSet{}, errors.New("error to be cached")
+			},
+			getConfig: func() (gh.Config, error) {
+				cfg := &ghmock.ConfigMock{}
+				cfg.AuthenticationFunc = func() gh.AuthConfig {
+					authCfg := &config.AuthConfig{}
+					authCfg.SetHosts([]string{"github.com"})
+					authCfg.SetDefaultHost("github.com", "default")
+					return authCfg
+				}
+				return cfg, nil
+			},
+			urlTranslator: identityTranslator{},
+		}
+
+		resolver := rr.Resolver()
+
+		remotes, err := resolver()
+		require.Error(t, err)
+		require.Equal(t, err.Error(), "error to be cached")
+		names := []string{}
+		for _, remote := range remotes {
+			names = append(names, remote.Name)
+		}
+		require.Equal(t, []string{}, names)
+
+		require.Equal(t, readRemotesCalled, true)
+
+		cachedRemotes, err := resolver()
+		require.Error(t, err)
+		require.Equal(t, err.Error(), "error to be cached")
+		cachedNames := []string{}
+		for _, remote := range cachedRemotes {
+			cachedNames = append(cachedNames, remote.Name)
+		}
+		require.Equal(t, []string{}, cachedNames)
+	})
 }
