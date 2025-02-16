@@ -935,6 +935,7 @@ func handlePush(opts CreateOptions, ctx CreateContext) error {
 	headRepo := ctx.HeadRepo
 	headRemote := ctx.HeadRemote
 	client := ctx.Client
+	gitClient := ctx.GitClient
 
 	var err error
 	// if a head repository could not be determined so far, automatically create
@@ -1002,6 +1003,15 @@ func handlePush(opts CreateOptions, ctx CreateContext) error {
 
 		fmt.Fprintf(opts.IO.ErrOut, "Added %s as remote %q\n", ghrepo.FullName(headRepo), remoteName)
 
+		if didForkRepo {
+			gitClient.SetRemoteResolution(context.Background(), "upstream", "base")
+			if opts.IO.IsStdinTTY() && opts.IO.IsStdoutTTY() {
+				cs := opts.IO.ColorScheme()
+				stderr := opts.IO.ErrOut
+				fmt.Fprintf(stderr, "%s Repository %s set as the default repository. To learn more about the default repository, run: gh repo set-default --help\n", cs.WarningIcon(), cs.Bold(ghrepo.FullName(headRepo)))
+			}
+		}
+
 		headRemote = &ghContext.Remote{
 			Remote: gitRemote,
 			Repo:   headRepo,
@@ -1013,7 +1023,6 @@ func handlePush(opts CreateOptions, ctx CreateContext) error {
 		pushBranch := func() error {
 			w := NewRegexpWriter(opts.IO.ErrOut, gitPushRegexp, "")
 			defer w.Flush()
-			gitClient := ctx.GitClient
 			ref := fmt.Sprintf("HEAD:refs/heads/%s", ctx.HeadBranch)
 			bo := backoff.NewConstantBackOff(2 * time.Second)
 			ctx := context.Background()
