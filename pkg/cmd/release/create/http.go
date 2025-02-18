@@ -315,33 +315,16 @@ func isNewRelease(httpClient *http.Client, repo ghrepo.Interface) (bool, error) 
 
 	tagName := release.TagName
 	path := fmt.Sprintf("repos/%s/%s/compare/%s...HEAD?per_page=1", repo.RepoOwner(), repo.RepoName(), tagName)
-	url := ghinstance.RESTPrefix(repo.RepoHost()) + path
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return false, err
-	}
 
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		return false, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return false, api.HandleHTTPError(resp)
-	}
-
-	type comparisonStatus struct {
+	var comparisonStatus struct {
 		Status string `json:"status"`
 	}
 
-	var cmpStatus comparisonStatus
-	if err := json.NewDecoder(resp.Body).Decode(&cmpStatus); err != nil {
+	apiClient := api.NewClientFromHTTP(httpClient)
+	if err := apiClient.REST(repo.RepoHost(), "GET", path, nil, &comparisonStatus); err != nil {
 		return false, err
 	}
 
-	isNew := cmpStatus.Status == "ahead"
+	isNew := comparisonStatus.Status == "ahead"
 	return isNew, nil
 }
