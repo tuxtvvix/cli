@@ -977,7 +977,8 @@ func handlePush(opts CreateOptions, ctx CreateContext) error {
 		headRepoURL := ghrepo.FormatRemoteURL(headRepo, cloneProtocol)
 		gitClient := ctx.GitClient
 		origin, _ := remotes.FindByName("origin")
-		upstream, _ := remotes.FindByName("upstream")
+		upstreamName := "upstream"
+		upstream, _ := remotes.FindByName(upstreamName)
 		remoteName := "origin"
 
 		if origin != nil {
@@ -985,7 +986,7 @@ func handlePush(opts CreateOptions, ctx CreateContext) error {
 		}
 
 		if origin != nil && upstream == nil && ghrepo.IsSame(origin, ctx.BaseRepo) {
-			renameCmd, err := gitClient.Command(context.Background(), "remote", "rename", "origin", "upstream")
+			renameCmd, err := gitClient.Command(context.Background(), "remote", "rename", "origin", upstreamName)
 			if err != nil {
 				return err
 			}
@@ -993,7 +994,7 @@ func handlePush(opts CreateOptions, ctx CreateContext) error {
 				return fmt.Errorf("error renaming origin remote: %w", err)
 			}
 			remoteName = "origin"
-			fmt.Fprintf(opts.IO.ErrOut, "Changed %s remote to %q\n", ghrepo.FullName(ctx.BaseRepo), "upstream")
+			fmt.Fprintf(opts.IO.ErrOut, "Changed %s remote to %q\n", ghrepo.FullName(ctx.BaseRepo), upstreamName)
 		}
 
 		gitRemote, err := gitClient.AddRemote(context.Background(), remoteName, headRepoURL, []string{})
@@ -1003,12 +1004,16 @@ func handlePush(opts CreateOptions, ctx CreateContext) error {
 
 		fmt.Fprintf(opts.IO.ErrOut, "Added %s as remote %q\n", ghrepo.FullName(headRepo), remoteName)
 
+		// Only mark `upstream` remote as default if `gh pr create` created the remote.
 		if didForkRepo {
-			gitClient.SetRemoteResolution(context.Background(), "upstream", "base")
-			if opts.IO.IsStdinTTY() && opts.IO.IsStdoutTTY() {
+			err := gitClient.SetRemoteResolution(context.Background(), upstreamName, "base")
+			if err != nil {
+				return fmt.Errorf("error setting upstream as default: %w", err)
+			}
+
+			if opts.IO.IsStdoutTTY() {
 				cs := opts.IO.ColorScheme()
-				stderr := opts.IO.ErrOut
-				fmt.Fprintf(stderr, "%s Repository %s set as the default repository. To learn more about the default repository, run: gh repo set-default --help\n", cs.WarningIcon(), cs.Bold(ghrepo.FullName(headRepo)))
+				fmt.Fprintf(opts.IO.ErrOut, "%s Repository %s set as the default repository. To learn more about the default repository, run: gh repo set-default --help\n", cs.WarningIcon(), cs.Bold(ghrepo.FullName(headRepo)))
 			}
 		}
 
