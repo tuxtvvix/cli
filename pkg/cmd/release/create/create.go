@@ -224,7 +224,7 @@ func createRun(opts *CreateOptions) error {
 	if opts.FailOnNoCommits {
 		isNew, err := isNewRelease(httpClient, baseRepo)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to check whether there were new commits since last release: %v", err)
 		}
 		if !isNew {
 			return fmt.Errorf("no new commits since the last release")
