@@ -261,7 +261,7 @@ func TestDeleteRun(t *testing.T) {
 			},
 			tty:        false,
 			wantErr:    false,
-			wantStdout: "",
+			wantStdout: "✓ No caches to delete\n",
 		},
 	}
 
