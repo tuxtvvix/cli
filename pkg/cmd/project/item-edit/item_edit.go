@@ -24,11 +24,11 @@ type editItemOpts struct {
 	projectID            string
 	text                 string
 	number               float64
+	numberChanged        bool
 	date                 string
 	singleSelectOptionID string
 	iterationID          string
 	clear                bool
-	numberChanged        bool
 	// format
 	exporter cmdutil.Exporter
 }
@@ -173,10 +173,6 @@ func buildUpdateItem(config editItemConfig, date time.Time) (*UpdateProjectV2Fie
 	if config.opts.text != "" {
 		value = githubv4.ProjectV2FieldValue{
 			Text: githubv4.NewString(githubv4.String(config.opts.text)),
-		}
-	} else if config.opts.number != 0 {
-		value = githubv4.ProjectV2FieldValue{
-			Number: githubv4.NewFloat(githubv4.Float(config.opts.number)),
 		}
 	} else if config.opts.numberChanged {
 		value = githubv4.ProjectV2FieldValue{

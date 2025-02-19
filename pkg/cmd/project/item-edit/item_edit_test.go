@@ -317,6 +317,59 @@ func TestRunItemEdit_Number(t *testing.T) {
 		stdout.String())
 }
 
+func TestRunItemEdit_NumberZero(t *testing.T) {
+	defer gock.Off()
+	// gock.Observe(gock.DumpRequest)
+
+	// edit item
+	gock.New("https://api.github.com").
+		Post("/graphql").
+		BodyString(`{"query":"mutation UpdateItemValues.*","variables":{"input":{"projectId":"project_id","itemId":"item_id","fieldId":"field_id","value":{"number":0}}}}`).
+		Reply(200).
+		JSON(map[string]interface{}{
+			"data": map[string]interface{}{
+				"updateProjectV2ItemFieldValue": map[string]interface{}{
+					"projectV2Item": map[string]interface{}{
+						"ID": "item_id",
+						"content": map[string]interface{}{
+							"__typename": "Issue",
+							"body":       "body",
+							"title":      "title",
+							"number":     1,
+							"repository": map[string]interface{}{
+								"nameWithOwner": "my-repo",
+							},
+						},
+					},
+				},
+			},
+		})
+
+	client := queries.NewTestClient()
+
+	ios, _, stdout, _ := iostreams.Test()
+	ios.SetStdoutTTY(true)
+
+	config := editItemConfig{
+		io: ios,
+		opts: editItemOpts{
+			number:        0,
+			numberChanged: true,
+			itemID:        "item_id",
+			projectID:     "project_id",
+			fieldID:       "field_id",
+		},
+		client: client,
+	}
+
+	err := runEditItem(config)
+	assert.NoError(t, err)
+	assert.Equal(
+		t,
+		"Edited item \"title\"\n",
+		stdout.String())
+}
+
 func TestRunItemEdit_Date(t *testing.T) {
 	defer gock.Off()
 	// gock.Observe(gock.DumpRequest)
