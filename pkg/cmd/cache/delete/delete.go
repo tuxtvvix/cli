@@ -117,7 +117,9 @@ func deleteRun(opts *DeleteOptions) error {
 		}
 		if len(caches.ActionsCaches) == 0 {
 			if opts.SucceedOnNoCaches {
-				fmt.Fprintf(opts.IO.Out, "%s No caches to delete\n", opts.IO.ColorScheme().SuccessIcon())
+				if opts.IO.IsStdoutTTY() {
+					fmt.Fprintf(opts.IO.Out, "%s No caches to delete\n", opts.IO.ColorScheme().SuccessIcon())
+				}
 				return nil
 			} else {
 				return fmt.Errorf("%s No caches to delete", opts.IO.ColorScheme().FailureIcon())
