@@ -17,7 +17,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var ErrNoUserComments = errors.New("no comments found for current user")
+var errNoUserComments = errors.New("no comments found for current user")
 
 type InputType int
 
@@ -94,7 +94,7 @@ func CommentableRun(opts *CommentableOptions) error {
 	opts.Host = repo.RepoHost()
 	if opts.EditLast {
 		err := updateComment(commentable, opts)
-		if !errors.Is(err, ErrNoUserComments) {
+		if !errors.Is(err, errNoUserComments) {
 			return err
 		}
 
@@ -102,12 +102,12 @@ func CommentableRun(opts *CommentableOptions) error {
 			if opts.CreateIfNone {
 				fmt.Fprintln(opts.IO.ErrOut, "No comments found. Creating a new comment.")
 			} else {
-				cont, err := opts.ConfirmCreateIfNoneSurvey()
+				ok, err := opts.ConfirmCreateIfNoneSurvey()
 				if err != nil {
 					return err
 				}
-				if !cont {
-					return ErrNoUserComments
+				if !ok {
+					return errNoUserComments
 				}
 			}
 		}
@@ -169,7 +169,7 @@ func createComment(commentable Commentable, opts *CommentableOptions) error {
 func updateComment(commentable Commentable, opts *CommentableOptions) error {
 	comments := commentable.CurrentUserComments()
 	if len(comments) == 0 {
-		return ErrNoUserComments
+		return errNoUserComments
 	}
 
 	lastComment := &comments[len(comments)-1]
