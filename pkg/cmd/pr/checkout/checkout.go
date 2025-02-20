@@ -172,7 +172,7 @@ func cmdsForExistingRemote(remote *cliContext.Remote, pr *api.PullRequest, opts 
 		refSpec += fmt.Sprintf(":refs/remotes/%s", remoteBranch)
 	}
 
-	cmds = append(cmds, []string{"fetch", remote.Name, refSpec})
+	cmds = append(cmds, []string{"fetch", remote.Name, refSpec, "--no-tags"})
 
 	localBranch := pr.HeadRefName
 	if opts.BranchName != "" {
@@ -202,7 +202,7 @@ func cmdsForMissingRemote(pr *api.PullRequest, baseURLOrName, repoHost, defaultB
 	ref := fmt.Sprintf("refs/pull/%d/head", pr.Number)
 
 	if opts.Detach {
-		cmds = append(cmds, []string{"fetch", baseURLOrName, ref})
+		cmds = append(cmds, []string{"fetch", baseURLOrName, ref, "--no-tags"})
 		cmds = append(cmds, []string{"checkout", "--detach", "FETCH_HEAD"})
 		return cmds
 	}
@@ -218,7 +218,7 @@ func cmdsForMissingRemote(pr *api.PullRequest, baseURLOrName, repoHost, defaultB
 	currentBranch, _ := opts.Branch()
 	if localBranch == currentBranch {
 		// PR head matches currently checked out branch
-		cmds = append(cmds, []string{"fetch", baseURLOrName, ref})
+		cmds = append(cmds, []string{"fetch", baseURLOrName, ref, "--no-tags"})
 		if opts.Force {
 			cmds = append(cmds, []string{"reset", "--hard", "FETCH_HEAD"})
 		} else {
@@ -227,10 +227,10 @@ func cmdsForMissingRemote(pr *api.PullRequest, baseURLOrName, repoHost, defaultB
 		}
 	} else {
 		if opts.Force {
-			cmds = append(cmds, []string{"fetch", baseURLOrName, fmt.Sprintf("%s:%s", ref, localBranch), "--force"})
+			cmds = append(cmds, []string{"fetch", baseURLOrName, fmt.Sprintf("%s:%s", ref, localBranch), "--force", "--no-tags"})
 		} else {
 			// TODO: check if non-fast-forward and suggest to use `--force`
-			cmds = append(cmds, []string{"fetch", baseURLOrName, fmt.Sprintf("%s:%s", ref, localBranch)})
+			cmds = append(cmds, []string{"fetch", baseURLOrName, fmt.Sprintf("%s:%s", ref, localBranch), "--no-tags"})
 		}
 
 		cmds = append(cmds, []string{"checkout", localBranch})
