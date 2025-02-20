@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/cli/cli/v2/context"
 	"github.com/cli/cli/v2/git"
 	"github.com/cli/cli/v2/internal/config"
 	"github.com/cli/cli/v2/internal/gh"
@@ -321,23 +322,16 @@ func Test_remoteResolver_Caching(t *testing.T) {
 
 		resolver := rr.Resolver()
 
+		expectedRemoteNames := []string{"origin"}
 		remotes, err := resolver()
 		require.NoError(t, err)
-		names := []string{}
-		for _, remote := range remotes {
-			names = append(names, remote.Name)
-		}
-		require.Equal(t, []string{"origin"}, names)
+		require.Equal(t, expectedRemoteNames, mapRemotesToNames(remotes))
 
 		require.Equal(t, readRemotesCalled, true)
 
 		cachedRemotes, err := resolver()
-		require.NoError(t, err)
-		cachedNames := []string{}
-		for _, remote := range cachedRemotes {
-			cachedNames = append(cachedNames, remote.Name)
-		}
-		require.Equal(t, []string{"origin"}, cachedNames)
+		require.NoError(t, err, "expected no error to be cached")
+		require.Equal(t, expectedRemoteNames, mapRemotesToNames(cachedRemotes), "expected the remotes to be cached")
 	})
 
 	t.Run("cache error", func(t *testing.T) {
@@ -369,24 +363,23 @@ func Test_remoteResolver_Caching(t *testing.T) {
 
 		resolver := rr.Resolver()
 
+		expectedErr := errors.New("error to be cached")
 		remotes, err := resolver()
-		require.Error(t, err)
-		require.Equal(t, err.Error(), "error to be cached")
-		names := []string{}
-		for _, remote := range remotes {
-			names = append(names, remote.Name)
-		}
-		require.Equal(t, []string{}, names)
+		require.Equal(t, expectedErr, err)
+		require.Empty(t, remotes, "should return no remotes")
 
 		require.Equal(t, readRemotesCalled, true)
 
 		cachedRemotes, err := resolver()
-		require.Error(t, err)
-		require.Equal(t, err.Error(), "error to be cached")
-		cachedNames := []string{}
-		for _, remote := range cachedRemotes {
-			cachedNames = append(cachedNames, remote.Name)
-		}
-		require.Equal(t, []string{}, cachedNames)
+		require.Equal(t, expectedErr, err, "expected the error to be cached")
+		require.Empty(t, cachedRemotes, "should return no remotes")
 	})
+}
+
+func mapRemotesToNames(remotes context.Remotes) []string {
+	names := make([]string, len(remotes))
+	for i, r := range remotes {
+		names[i] = r.Name
+	}
+	return names
 }
