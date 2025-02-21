@@ -226,13 +226,12 @@ func cmdsForMissingRemote(pr *api.PullRequest, baseURLOrName, repoHost, defaultB
 			cmds = append(cmds, []string{"merge", "--ff-only", "FETCH_HEAD"})
 		}
 	} else {
+		// TODO: check if non-fast-forward and suggest to use `--force`
+		fetchCmd := []string{"fetch", baseURLOrName, fmt.Sprintf("%s:%s", ref, localBranch), "--no-tags"}
 		if opts.Force {
-			cmds = append(cmds, []string{"fetch", baseURLOrName, fmt.Sprintf("%s:%s", ref, localBranch), "--force", "--no-tags"})
-		} else {
-			// TODO: check if non-fast-forward and suggest to use `--force`
-			cmds = append(cmds, []string{"fetch", baseURLOrName, fmt.Sprintf("%s:%s", ref, localBranch), "--no-tags"})
+			fetchCmd = append(fetchCmd, "--force")
 		}
-
+		cmds = append(cmds, fetchCmd)
 		cmds = append(cmds, []string{"checkout", localBranch})
 	}
 

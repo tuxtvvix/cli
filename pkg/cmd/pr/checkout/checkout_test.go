@@ -501,6 +501,29 @@ func TestPRCheckout_differentRepo(t *testing.T) {
 	assert.Equal(t, "", output.Stderr())
 }
 
+func TestPRCheckout_differentRepoForce(t *testing.T) {
+	http := &httpmock.Registry{}
+	defer http.Verify(t)
+
+	baseRepo, pr := stubPR("OWNER/REPO:master", "hubot/REPO:feature")
+	finder := shared.RunCommandFinder("123", pr, baseRepo)
+	finder.ExpectFields([]string{"number", "headRefName", "headRepository", "headRepositoryOwner", "isCrossRepository", "maintainerCanModify"})
+
+	cs, cmdTeardown := run.Stub()
+	defer cmdTeardown(t)
+	cs.Register(`git fetch origin refs/pull/123/head:feature --no-tags --force`, 0, "")
+	cs.Register(`git config branch\.feature\.merge`, 1, "")
+	cs.Register(`git checkout feature`, 0, "")
+	cs.Register(`git config branch\.feature\.remote origin`, 0, "")
+	cs.Register(`git config branch\.feature\.pushRemote origin`, 0, "")
+	cs.Register(`git config branch\.feature\.merge refs/pull/123/head`, 0, "")
+
+	output, err := runCommand(http, nil, "master", `123 --force`, baseRepo)
+	assert.NoError(t, err)
+	assert.Equal(t, "", output.String())
+	assert.Equal(t, "", output.Stderr())
+}
+
 func TestPRCheckout_differentRepo_existingBranch(t *testing.T) {
 	http := &httpmock.Registry{}
 	defer http.Verify(t)
